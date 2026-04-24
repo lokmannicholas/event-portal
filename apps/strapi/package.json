@@ -1,0 +1,31 @@
+{
+  "name": "@flu-vax/cms",
+  "private": true,
+  "scripts": {
+    "build:plugin": "tsc -p ./src/plugins/event-portal/server/tsconfig.build.json",
+    "build:scripts": "tsc -p ./tsconfig.scripts.json",
+    "sync:schemas": "yarn build:scripts && node ./dist/scripts/sync-content-type-schemas.js",
+    "predevelop": "yarn sync:schemas && tsc -p ./src/plugins/event-portal/server/tsconfig.build.json",
+    "develop": "strapi develop",
+    "prebuild": "yarn sync:schemas && tsc -p ./src/plugins/event-portal/server/tsconfig.build.json",
+    "build": "strapi build",
+    "prestart": "yarn sync:schemas && tsc -p ./src/plugins/event-portal/server/tsconfig.build.json",
+    "start": "strapi start",
+    "typecheck": "yarn sync:schemas && tsc --noEmit"
+  },
+  "dependencies": {
+    "@strapi/plugin-documentation": "^5.37.1",
+    "@strapi/plugin-users-permissions": "5.35.0",
+    "@strapi/strapi": "5.35.0",
+    "@strapi/typescript-utils": "5.35.0",
+    "pg": "^8.14.1",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  }
+}

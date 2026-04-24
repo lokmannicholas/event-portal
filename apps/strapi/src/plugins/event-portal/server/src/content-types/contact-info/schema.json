@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "contact_infos",
+  "info": {
+    "singularName": "contact-info",
+    "pluralName": "contact-infos",
+    "displayName": "Contact Info",
+    "description": "Portal support contact information"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "titleEn": {
+      "type": "string",
+      "required": true
+    },
+    "titleZh": {
+      "type": "string"
+    },
+    "descriptionEn": {
+      "type": "text"
+    },
+    "descriptionZh": {
+      "type": "text"
+    },
+    "email": {
+      "type": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "addressEn": {
+      "type": "text"
+    },
+    "addressZh": {
+      "type": "text"
+    },
+    "portalTargets": {
+      "type": "json",
+      "required": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "userPartition": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.user-partition",
+      "inversedBy": "contactInfos"
+    }
+  }
+}

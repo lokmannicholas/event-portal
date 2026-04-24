@@ -1,0 +1,45 @@
+export default {
+  type: 'content-api',
+  prefix: '',
+  routes: [
+    { method: 'GET', path: '/portal/eap/dashboard', handler: 'portal.eapDashboard', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/partitions', handler: 'portal.eapPartitions', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/groups', handler: 'portal.eapGroups', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/users', handler: 'portal.eapUsers', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/users/:documentId', handler: 'portal.eapUser', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/templates', handler: 'portal.eapTemplates', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/notices/send', handler: 'portal.sendNotices', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/events', handler: 'portal.eapEvents', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/appointments', handler: 'portal.eapAppointments', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/documents', handler: 'portal.eapDocuments', config: { auth: false } },
+    { method: 'GET', path: '/portal/eap/contacts', handler: 'portal.eapContacts', config: { auth: false } },
+
+    { method: 'GET', path: '/portal/management/users', handler: 'portal.managementUsers', config: { auth: false } },
+    { method: 'GET', path: '/portal/management/users/:documentId', handler: 'portal.managementUser', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/users', handler: 'portal.createManagementUser', config: { auth: false } },
+    { method: 'PUT', path: '/portal/management/users/:documentId', handler: 'portal.replaceManagementUser', config: { auth: false } },
+    { method: 'PATCH', path: '/portal/management/users/:documentId', handler: 'portal.updateManagementUser', config: { auth: false } },
+
+    { method: 'POST', path: '/portal/management/templates/:documentId/generate', handler: 'portal.generateEventFromTemplate', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/events/:documentId/publish', handler: 'portal.publishEvent', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/events/:documentId/slots', handler: 'portal.syncManagementEventSlots', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/events/:documentId/unpublish', handler: 'portal.unpublishEvent', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/events/:documentId/disable', handler: 'portal.disableEvent', config: { auth: false } },
+    { method: 'POST', path: '/portal/management/appointments/:documentId/cancel', handler: 'portal.cancelAppointment', config: { auth: false } },
+
+    { method: 'GET', path: '/portal/ecp/dashboard', handler: 'portal.ecpDashboard', config: { auth: false } },
+    { method: 'GET', path: '/portal/ecp/events', handler: 'portal.ecpEvents', config: { auth: false } },
+    { method: 'GET', path: '/portal/ecp/events/:documentId', handler: 'portal.ecpEventDetail', config: { auth: false } },
+    { method: 'GET', path: '/portal/ecp/documents', handler: 'portal.ecpDocuments', config: { auth: false } },
+    { method: 'GET', path: '/portal/ecp/contacts', handler: 'portal.ecpContacts', config: { auth: false } },
+
+    { method: 'GET', path: '/portal/erp/partitions/:partitionCode', handler: 'portal.erpPartitionLanding', config: { auth: false } },
+    { method: 'GET', path: '/portal/erp/events/:documentId', handler: 'portal.erpEventDetail', config: { auth: false } },
+    { method: 'GET', path: '/portal/erp/documents', handler: 'portal.erpDocuments', config: { auth: false } },
+    { method: 'GET', path: '/portal/erp/contacts', handler: 'portal.erpContacts', config: { auth: false } },
+    { method: 'POST', path: '/portal/erp/holds', handler: 'portal.createHold', config: { auth: false } },
+    { method: 'POST', path: '/portal/erp/bookings', handler: 'portal.createBooking', config: { auth: false } },
+    { method: 'POST', path: '/portal/erp/enquiries', handler: 'portal.createEnquiry', config: { auth: false } },
+    { method: 'POST', path: '/portal/erp/cancellations/:documentId', handler: 'portal.erpCancelAppointment', config: { auth: false } }
+  ],
+};

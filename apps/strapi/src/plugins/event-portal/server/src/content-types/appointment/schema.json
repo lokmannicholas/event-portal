@@ -1,0 +1,125 @@
+{
+  "kind": "collectionType",
+  "collectionName": "appointments",
+  "info": {
+    "singularName": "appointment",
+    "pluralName": "appointments",
+    "displayName": "Appointment",
+    "description": "Confirmed or cancelled booking record"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "bookingReference": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "participantName": {
+      "type": "string",
+      "required": true
+    },
+    "staffNumber": {
+      "type": "string"
+    },
+    "medicalCardNumber": {
+      "type": "string"
+    },
+    "hkidPrefix": {
+      "type": "string"
+    },
+    "registeredEmail": {
+      "type": "email"
+    },
+    "mobileNumber": {
+      "type": "string"
+    },
+    "communicationPreference": {
+      "type": "enumeration",
+      "enum": [
+        "EMAIL",
+        "SMS"
+      ],
+      "required": true
+    },
+    "appointmentStatus": {
+      "type": "enumeration",
+      "enum": [
+        "CONFIRMED",
+        "CANCELLED",
+        "EXPIRED"
+      ],
+      "default": "CONFIRMED"
+    },
+    "appointmentDate": {
+      "type": "date",
+      "required": true
+    },
+    "appointmentStartTime": {
+      "type": "time",
+      "required": true
+    },
+    "appointmentEndTime": {
+      "type": "time",
+      "required": true
+    },
+    "quotaSnapshot": {
+      "type": "integer"
+    },
+    "cancelToken": {
+      "type": "string",
+      "unique": true
+    },
+    "cancelledAt": {
+      "type": "datetime"
+    },
+    "cancelledByEmail": {
+      "type": "email"
+    },
+    "cancellationReason": {
+      "type": "text"
+    },
+    "submittedAt": {
+      "type": "datetime"
+    },
+    "portalSource": {
+      "type": "enumeration",
+      "enum": [
+        "ERP",
+        "EAP",
+        "ECP"
+      ],
+      "default": "ERP"
+    },
+    "termsAccepted": {
+      "type": "boolean",
+      "default": false
+    },
+    "participantIdentityHash": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "json"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.event",
+      "inversedBy": "appointments"
+    },
+    "eventSlot": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.event-slot",
+      "inversedBy": "appointments"
+    },
+    "auditLogs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::event-portal.audit-log",
+      "mappedBy": "appointment"
+    }
+  }
+}

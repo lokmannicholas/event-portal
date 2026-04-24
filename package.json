@@ -1,0 +1,19 @@
+{
+  "name": "flu-vaccination-platform",
+  "private": true,
+  "packageManager": "yarn@4.2.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:eap": "yarn workspace @flu-vax/eap dev",
+    "dev:cms": "yarn workspace @flu-vax/cms develop",
+    "build:eap": "yarn workspace @flu-vax/eap build",
+    "build:cms": "yarn workspace @flu-vax/cms build",
+    "build": "yarn build:eap && yarn build:cms",
+    "typecheck:eap": "yarn workspace @flu-vax/eap typecheck",
+    "typecheck:cms": "yarn workspace @flu-vax/cms typecheck",
+    "typecheck": "yarn typecheck:eap && yarn typecheck:cms"
+  }
+}

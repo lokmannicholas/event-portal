@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_groups",
+  "info": {
+    "singularName": "user-group",
+    "pluralName": "user-groups",
+    "displayName": "User Group",
+    "description": "Portal access grouping for client users"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "description": {
+      "type": "string",
+      "required": true
+    },
+    "remarks": {
+      "type": "text"
+    },
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "userGroupStatus": {
+      "type": "enumeration",
+      "enum": [
+        "ACTIVE",
+        "DISABLED"
+      ],
+      "default": "ACTIVE"
+    },
+    "companyName": {
+      "type": "string"
+    },
+    "partitions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::event-portal.user-partition",
+      "mappedBy": "userGroup"
+    },
+    "portalUsers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "userGroups"
+    }
+  }
+}

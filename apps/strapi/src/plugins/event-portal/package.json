@@ -1,0 +1,17 @@
+{
+  "name": "event-portal",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p ./server/tsconfig.build.json"
+  },
+  "exports": {
+    "./strapi-server": "./strapi-server.js",
+    "./package.json": "./package.json"
+  },
+  "strapi": {
+    "name": "event-portal",
+    "displayName": "Event Portal",
+    "description": "Event portal content types, services, and routes.",
+    "kind": "plugin"
+  }
+}

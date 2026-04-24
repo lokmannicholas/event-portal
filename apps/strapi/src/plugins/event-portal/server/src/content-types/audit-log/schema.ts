@@ -1,0 +1,48 @@
+export default {
+  "kind": "collectionType",
+  "collectionName": "audit_logs",
+  "info": {
+    "singularName": "audit-log",
+    "pluralName": "audit-logs",
+    "displayName": "Audit Log",
+    "description": "History record for workflow and cancellation actions"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "entityType": {
+      "type": "string",
+      "required": true
+    },
+    "entityDocumentId": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "required": true
+    },
+    "actorEmail": {
+      "type": "email"
+    },
+    "actorRole": {
+      "type": "string"
+    },
+    "details": {
+      "type": "json"
+    },
+    "appointment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.appointment",
+      "inversedBy": "auditLogs"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.event",
+      "inversedBy": "auditLogs"
+    }
+  }
+};

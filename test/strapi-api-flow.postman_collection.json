@@ -1,0 +1,1337 @@
+{
+  "info": {
+    "_postman_id": "c1b2b0f3-6f6c-4d30-b6cc-5e44a3c4c6e1",
+    "name": "Flu Vax Strapi API Flow",
+    "description": "Postman collection for the Strapi event-portal plugin. Run the folders in order, or run the whole collection. Core CRUD requests use `strapiToken`, which can be either a Strapi API token or a JWT obtained from the optional login request. The flow creates dependent records in order: mandatory field -> user partition -> user group -> contact info -> event template -> event -> event slot -> ERP hold -> ERP booking -> audit log lookup, then deletes them in reverse order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('strapiBaseUrl')) {",
+          "  pm.collectionVariables.set('strapiBaseUrl', 'http://localhost:1337');",
+          "}",
+          "",
+          "const token = pm.collectionVariables.get('strapiToken');",
+          "const url = pm.request.url.toString();",
+          "",
+          "if (token && !url.includes('/api/auth/local')) {",
+          "  pm.request.headers.upsert({ key: 'Authorization', value: `Bearer ${token}` });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "strapiBaseUrl",
+      "value": "http://localhost:1337"
+    },
+    {
+      "key": "publicBaseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "changeme"
+    },
+    {
+      "key": "strapiToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Auth And Init",
+      "item": [
+        {
+          "name": "Login And Store JWT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identifier\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/auth/local",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "local"
+              ]
+            },
+            "description": "Optional. Use this if you want the collection to obtain a users-permissions JWT instead of manually setting `strapiToken` to a Strapi API token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.jwt).to.be.a('string');",
+                  "pm.collectionVariables.set('strapiToken', json.jwt);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Init Run Context",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/eap/dashboard",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "eap",
+                "dashboard"
+              ]
+            },
+            "description": "Generates a fresh run id and all derived variables used by later requests."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function isoDate(offsetDays) {",
+                  "  const date = new Date();",
+                  "  date.setUTCDate(date.getUTCDate() + offsetDays);",
+                  "  return date.toISOString().slice(0, 10);",
+                  "}",
+                  "",
+                  "const runId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;",
+                  "const vars = pm.collectionVariables;",
+                  "",
+                  "[",
+                  "  'mandatoryFieldDocumentId',",
+                  "  'userPartitionDocumentId',",
+                  "  'userGroupDocumentId',",
+                  "  'contactInfoDocumentId',",
+                  "  'eventTemplateDocumentId',",
+                  "  'eventDocumentId',",
+                  "  'eventSlotDocumentId',",
+                  "  'holdToken',",
+                  "  'appointmentHoldDocumentId',",
+                  "  'appointmentDocumentId',",
+                  "  'auditLogDocumentId',",
+                  "  'cancelToken'",
+                  "].forEach((key) => vars.unset(key));",
+                  "",
+                  "vars.set('runId', runId);",
+                  "vars.set('mandatoryFieldKey', `participant_name_${runId}`);",
+                  "vars.set('partitionCode', `PT-${runId}`.toUpperCase());",
+                  "vars.set('partitionSlug', `pt-${runId}`);",
+                  "vars.set('groupCode', `GRP-${runId}`.toUpperCase());",
+                  "vars.set('contactTitle', `Support ${runId}`);",
+                  "vars.set('templateName', `Template ${runId}`);",
+                  "vars.set('eventName', `Vaccination Event ${runId}`);",
+                  "vars.set('participantName', `Portal QA ${runId}`);",
+                  "vars.set('participantEmail', `qa+${runId}@example.com`);",
+                  "vars.set('participantMobile', `9000${String(Math.floor(Math.random() * 9000) + 1000)}`);",
+                  "vars.set('registrationStartDate', isoDate(-1));",
+                  "vars.set('registrationEndDate', isoDate(14));",
+                  "vars.set('eventStartDate', isoDate(7));",
+                  "vars.set('eventEndDate', isoDate(7));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('dashboard smoke check passed', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.headline).to.eql('EAP overview');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 Core Dependency Setup",
+      "item": [
+        {
+          "name": "Create Mandatory Field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"key\":\"{{mandatoryFieldKey}}\",\"labelEn\":\"Participant name\",\"labelZh\":\"Participant name\",\"fieldType\":\"TEXT\",\"required\":true,\"placeholderEn\":\"Enter participant name\",\"isActive\":true,\"sortOrder\":10}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/mandatory-fields",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mandatory-fields"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('mandatory field created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('mandatoryFieldDocumentId', json.data.documentId);",
+                  "pm.expect(json.data.key).to.eql(pm.collectionVariables.get('mandatoryFieldKey'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create User Partition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"code\":\"{{partitionCode}}\",\"description\":\"Postman flow partition {{runId}}\",\"slug\":\"{{partitionSlug}}\",\"userPartitionStatus\":\"ACTIVE\",\"remarks\":\"Created by Postman flow\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/user-partitions",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-partitions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('user partition created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('userPartitionDocumentId', json.data.documentId);",
+                  "pm.expect(json.data.code).to.eql(pm.collectionVariables.get('partitionCode'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create User Group Linked To Partition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"code\":\"{{groupCode}}\",\"description\":\"Postman flow group {{runId}}\",\"remarks\":\"Created by Postman flow\",\"userGroupStatus\":\"ACTIVE\",\"companyCode\":\"CMP-{{runId}}\",\"partitions\":[\"{{userPartitionDocumentId}}\"]}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/user-groups",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-groups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('user group created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('userGroupDocumentId', json.data.documentId);",
+                  "pm.expect(json.data.code).to.eql(pm.collectionVariables.get('groupCode'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User Partition With Group Relation",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/user-partitions/{{userPartitionDocumentId}}?populate[0]=userGroups",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-partitions",
+                "{{userPartitionDocumentId}}"
+              ],
+              "query": [
+                {
+                  "key": "populate[0]",
+                  "value": "userGroups"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('partition relation lookup succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const groups = json.data.userGroups || [];",
+                  "pm.expect(groups.some((group) => group.documentId === pm.collectionVariables.get('userGroupDocumentId'))).to.eql(true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Contact Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"titleEn\":\"{{contactTitle}}\",\"descriptionEn\":\"Support channel for Postman flow {{runId}}\",\"email\":\"support+{{runId}}@example.com\",\"phone\":\"+852 3100 0000\",\"addressEn\":\"1 Test Street\",\"portalTargets\":[\"ERP\",\"ECP\"],\"sortOrder\":10,\"active\":true,\"userPartition\":\"{{userPartitionDocumentId}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/contact-infos",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact-infos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('contact info created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('contactInfoDocumentId', json.data.documentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Event Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"name\":\"{{templateName}}\",\"description\":\"Postman template {{runId}}\",\"companyName\":\"Acme Health\",\"location\":\"Central Clinic\",\"eventName\":\"{{eventName}}\",\"eventDescription\":\"Template-driven flu vaccination event\",\"defaultEventStartDate\":\"{{eventStartDate}}\",\"defaultEventEndDate\":\"{{eventEndDate}}\",\"dayStartTime\":\"09:00:00.000\",\"dayEndTime\":\"10:00:00.000\",\"timeslotDurationMinutes\":30,\"quotaPerSlot\":4,\"registrationStartDate\":\"{{registrationStartDate}}\",\"registrationEndDate\":\"{{registrationEndDate}}\",\"eventTemplateStatus\":\"ACTIVE\",\"userPartition\":\"{{userPartitionDocumentId}}\",\"formFields\":[{\"fieldKey\":\"participant_name\",\"labelEn\":\"Participant name\",\"fieldType\":\"TEXT\",\"required\":true,\"visibleInErp\":true,\"visibleInEcp\":true,\"visibleInEap\":true,\"sortOrder\":10}]}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/event-templates",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "event-templates"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event template created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('eventTemplateDocumentId', json.data.documentId);",
+                  "pm.expect(json.data.name).to.eql(pm.collectionVariables.get('templateName'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"companyName\":\"Acme Health\",\"location\":\"Central Clinic\",\"eventName\":\"{{eventName}}\",\"eventDescription\":\"Directly created event for API flow\",\"eventNotes\":\"Created by Postman flow\",\"eventStatus\":\"RELEASED\",\"eventStartDate\":\"{{eventStartDate}}\",\"eventEndDate\":\"{{eventEndDate}}\",\"dayStartTime\":\"09:00:00.000\",\"dayEndTime\":\"10:00:00.000\",\"registrationStartDate\":\"{{registrationStartDate}}\",\"registrationEndDate\":\"{{registrationEndDate}}\",\"reminderOffsetDays\":2,\"publishedToPortals\":true,\"publicBaseUrl\":\"{{publicBaseUrl}}\",\"userPartition\":\"{{userPartitionDocumentId}}\",\"template\":\"{{eventTemplateDocumentId}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/events",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('eventDocumentId', json.data.documentId);",
+                  "pm.expect(json.data.eventStatus).to.eql('RELEASED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Event Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":{\"eventDate\":\"{{eventStartDate}}\",\"startTime\":\"09:00:00.000\",\"endTime\":\"09:30:00.000\",\"enabled\":true,\"quota\":4,\"usedCount\":0,\"holdCount\":0,\"sortOrder\":10,\"event\":\"{{eventDocumentId}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/event-slots",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "event-slots"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event slot created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('eventSlotDocumentId', json.data.documentId);",
+                  "pm.expect(json.data.quota).to.eql(4);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Event With Relations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/events/{{eventDocumentId}}?populate[0]=userPartition&populate[1]=template&populate[2]=slots",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventDocumentId}}"
+              ],
+              "query": [
+                {
+                  "key": "populate[0]",
+                  "value": "userPartition"
+                },
+                {
+                  "key": "populate[1]",
+                  "value": "template"
+                },
+                {
+                  "key": "populate[2]",
+                  "value": "slots"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event lookup succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.data.template.documentId).to.eql(pm.collectionVariables.get('eventTemplateDocumentId'));",
+                  "pm.expect(json.data.userPartition.documentId).to.eql(pm.collectionVariables.get('userPartitionDocumentId'));",
+                  "pm.expect((json.data.slots || []).some((slot) => slot.documentId === pm.collectionVariables.get('eventSlotDocumentId'))).to.eql(true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "20 Portal Booking Flow",
+      "item": [
+        {
+          "name": "ERP Partition Landing",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/erp/partitions/{{partitionCode}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "erp",
+                "partitions",
+                "{{partitionCode}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ERP landing returned partition scope', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.partition.code).to.eql(pm.collectionVariables.get('partitionCode'));",
+                  "pm.expect(json.events.some((event) => event.documentId === pm.collectionVariables.get('eventDocumentId'))).to.eql(true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ECP Events By Group Scope",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/ecp/events?groupCode={{groupCode}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "ecp",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "groupCode",
+                  "value": "{{groupCode}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ECP event scope returned event', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.some((event) => event.documentId === pm.collectionVariables.get('eventDocumentId'))).to.eql(true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create ERP Hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventDocumentId\":\"{{eventDocumentId}}\",\"eventSlotDocumentId\":\"{{eventSlotDocumentId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/erp/holds",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "erp",
+                "holds"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('hold created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('holdToken', json.holdToken);",
+                  "pm.expect(json.slotDocumentId).to.eql(pm.collectionVariables.get('eventSlotDocumentId'));",
+                  "pm.expect(json.remaining).to.eql(3);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Find Hold Via Core API",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/appointment-holds?filters[holdToken][$eq]={{holdToken}}&populate[0]=event&populate[1]=eventSlot",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointment-holds"
+              ],
+              "query": [
+                {
+                  "key": "filters[holdToken][$eq]",
+                  "value": "{{holdToken}}"
+                },
+                {
+                  "key": "populate[0]",
+                  "value": "event"
+                },
+                {
+                  "key": "populate[1]",
+                  "value": "eventSlot"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('hold lookup succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.data.length).to.be.greaterThan(0);",
+                  "pm.collectionVariables.set('appointmentHoldDocumentId', json.data[0].documentId);",
+                  "pm.expect(json.data[0].appointmentHoldStatus).to.eql('ACTIVE');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create ERP Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventDocumentId\":\"{{eventDocumentId}}\",\"eventSlotDocumentId\":\"{{eventSlotDocumentId}}\",\"holdToken\":\"{{holdToken}}\",\"participantName\":\"{{participantName}}\",\"staffNumber\":\"STAFF-{{runId}}\",\"registeredEmail\":\"{{participantEmail}}\",\"mobileNumber\":\"{{participantMobile}}\",\"communicationPreference\":\"EMAIL\",\"termsAccepted\":true,\"formValues\":{\"participant_name\":\"{{participantName}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/erp/bookings",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "erp",
+                "bookings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('booking created', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('appointmentDocumentId', json.documentId);",
+                  "pm.collectionVariables.set('cancelToken', json.cancelToken);",
+                  "pm.expect(json.eventDocumentId).to.eql(pm.collectionVariables.get('eventDocumentId'));",
+                  "pm.expect(json.status).to.eql('CONFIRMED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Appointment Via Core API",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/appointments/{{appointmentDocumentId}}?populate[0]=event&populate[1]=eventSlot",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "{{appointmentDocumentId}}"
+              ],
+              "query": [
+                {
+                  "key": "populate[0]",
+                  "value": "event"
+                },
+                {
+                  "key": "populate[1]",
+                  "value": "eventSlot"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('appointment lookup succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.data.appointmentStatus).to.eql('CONFIRMED');",
+                  "pm.expect(json.data.event.documentId).to.eql(pm.collectionVariables.get('eventDocumentId'));",
+                  "pm.expect(json.data.eventSlot.documentId).to.eql(pm.collectionVariables.get('eventSlotDocumentId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Find Audit Log For Booking",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/audit-logs?filters[entityDocumentId][$eq]={{appointmentDocumentId}}&populate[0]=appointment&populate[1]=event",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "filters[entityDocumentId][$eq]",
+                  "value": "{{appointmentDocumentId}}"
+                },
+                {
+                  "key": "populate[0]",
+                  "value": "appointment"
+                },
+                {
+                  "key": "populate[1]",
+                  "value": "event"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('audit log lookup succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.data.length).to.be.greaterThan(0);",
+                  "pm.collectionVariables.set('auditLogDocumentId', json.data[0].documentId);",
+                  "pm.expect(json.data[0].action).to.eql('BOOKED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EAP Appointment Listing",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/eap/appointments?eventDocumentId={{eventDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "eap",
+                "appointments"
+              ],
+              "query": [
+                {
+                  "key": "eventDocumentId",
+                  "value": "{{eventDocumentId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EAP appointments returned booking', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.some((appointment) => appointment.documentId === pm.collectionVariables.get('appointmentDocumentId'))).to.eql(true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERP Enquiry By Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"registeredEmail\":\"{{participantEmail}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/portal/erp/enquiries",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "portal",
+                "erp",
+                "enquiries"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('enquiry accepted', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.accepted).to.eql(true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "90 Cleanup",
+      "item": [
+        {
+          "name": "Delete Audit Log",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/audit-logs/{{auditLogDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "audit-logs",
+                "{{auditLogDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('audit log deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Appointment Hold",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/appointment-holds/{{appointmentHoldDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointment-holds",
+                "{{appointmentHoldDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('appointment hold deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Appointment",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/appointments/{{appointmentDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "{{appointmentDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('appointment deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Event Slot",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/event-slots/{{eventSlotDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "event-slots",
+                "{{eventSlotDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event slot deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/events/{{eventDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Event Template",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/event-templates/{{eventTemplateDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "event-templates",
+                "{{eventTemplateDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('event template deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Contact Info",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/contact-infos/{{contactInfoDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact-infos",
+                "{{contactInfoDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('contact info deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Mandatory Field",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/mandatory-fields/{{mandatoryFieldDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mandatory-fields",
+                "{{mandatoryFieldDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('mandatory field deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete User Group",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/user-groups/{{userGroupDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-groups",
+                "{{userGroupDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('user group deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete User Partition",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{strapiBaseUrl}}/api/user-partitions/{{userPartitionDocumentId}}",
+              "host": [
+                "{{strapiBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-partitions",
+                "{{userPartitionDocumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('user partition deleted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
