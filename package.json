@@ -7,13 +7,13 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:eap": "yarn workspace @flu-vax/eap dev",
+    "dev:event-portal": "yarn workspace @flu-vax/event-portal dev",
     "dev:cms": "yarn workspace @flu-vax/cms develop",
-    "build:eap": "yarn workspace @flu-vax/eap build",
+    "build:event-portal": "yarn workspace @flu-vax/event-portal build",
     "build:cms": "yarn workspace @flu-vax/cms build",
-    "build": "yarn build:eap && yarn build:cms",
-    "typecheck:eap": "yarn workspace @flu-vax/eap typecheck",
+    "build": "yarn build:event-portal && yarn build:cms",
+    "typecheck:event-portal": "yarn workspace @flu-vax/event-portal typecheck",
     "typecheck:cms": "yarn workspace @flu-vax/cms typecheck",
-    "typecheck": "yarn typecheck:eap && yarn typecheck:cms"
+    "typecheck": "yarn typecheck:event-portal && yarn typecheck:cms"
   }
 }

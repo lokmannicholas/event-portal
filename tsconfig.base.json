@@ -14,8 +14,8 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@flu-vax/contracts": ["apps/eap/lib/contracts/index.ts"],
-      "@flu-vax/ui": ["apps/eap/lib/ui/index.tsx"]
+      "@flu-vax/contracts": ["apps/event-portal/lib/contracts/index.ts"],
+      "@flu-vax/ui": ["apps/event-portal/lib/ui/index.tsx"]
     }
   }
 }

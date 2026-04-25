@@ -51,14 +51,12 @@ export default factories.createCoreController(uid, ({ strapi }: { strapi: Core.S
 
   async update(ctx: any) {
     const requestData = getRequestData(ctx.request.body);
-    console.log('[event] update requestData', requestData);
     const eventSlots = (strapi.service(uid) as any).normalizeEventSlots(requestData.eventSlots ?? requestData.slotPlan);
     const normalized = normalizeContentTypePayload(strapi, uid, {
       ...(ctx.request.body as Record<string, unknown>),
       data: stripEventSlotFields(requestData),
     });
     ctx.request.body = normalized.body;
-    console.log('[event] update normalized', normalized);
 
 
     const response = await super.update(ctx);
@@ -66,9 +64,7 @@ export default factories.createCoreController(uid, ({ strapi }: { strapi: Core.S
 
     if (typeof documentId === 'string' && documentId) {
       await syncInverseRelations(strapi, uid, documentId, normalized.inverseRelations);
-      console.log('[event] update syncInverseRelations', normalized.inverseRelations);
       await (strapi.service(uid) as any).syncEventSlots(documentId, eventSlots);
-      console.log('[event] update syncEventSlots', eventSlots);
     }
 
     return response;

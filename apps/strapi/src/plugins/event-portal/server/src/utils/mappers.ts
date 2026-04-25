@@ -6,6 +6,49 @@ function toArray<T = any>(value: T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : [];
 }
 
+function formatTimeForInput(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+
+  if (/^\d{2}:\d{2}:\d{2}/.test(trimmed)) {
+    return trimmed.slice(0, 5);
+  }
+
+  return trimmed;
+}
+
+function getPublicAppBaseUrl(record: AnyRecord) {
+  const configured = process.env.PUBLIC_FRONTEND_URL?.trim();
+
+  if (configured) {
+    return configured.replace(/\/$/, '');
+  }
+
+  if (typeof record.publicBaseUrl === 'string' && /^https?:\/\//.test(record.publicBaseUrl.trim())) {
+    return record.publicBaseUrl.trim().replace(/\/$/, '');
+  }
+
+  return 'http://localhost:3002';
+}
+
+function mapNotificationTemplate(type: string, noticeTemplate: AnyRecord | null | undefined) {
+  if (!noticeTemplate) {
+    return undefined;
+  }
+
+  return {
+    type,
+    templateDocumentId: noticeTemplate.documentId,
+    templateName: noticeTemplate.name,
+    channel: noticeTemplate.channel,
+    subject: noticeTemplate.subject,
+    enabled: true,
+  };
+}
+
 function getStatus(record: AnyRecord, key: string) {
   return record[key] ?? record.status;
 }
@@ -39,6 +82,7 @@ export function mapPartition(record: AnyRecord) {
     slug: record.slug,
     status: getStatus(record, 'userPartitionStatus'),
     remarks: record.remarks,
+    groupCompanyName: userGroup[0]?.companyName,
     userGroupCodes: userGroup.map((group: any) => group.code).filter(Boolean),
     templateDocumentId: record.template?.documentId,
     templateName: record.template?.name,
@@ -158,6 +202,7 @@ function mapEventSlotsToDates(slots: AnyRecord[]) {
 export function mapEventListItem(record: AnyRecord) {
   const eventCode = record.publicSlug ?? record.documentId;
   const partitionCode = record.userPartition?.code ?? '';
+  const publicPath = `/p/${partitionCode}/e/${eventCode}`;
 
   return {
     documentId: record.documentId,
@@ -173,27 +218,31 @@ export function mapEventListItem(record: AnyRecord) {
     registrationEndDate: record.registrationEndDate,
     eventStartDate: record.eventStartDate,
     eventEndDate: record.eventEndDate,
+    dayStartTime: formatTimeForInput(record.dayStartTime),
+    dayEndTime: formatTimeForInput(record.dayEndTime),
+    showInRegistrationPeriod: record.showInRegistrationPeriod !== false,
+    showInEventPeriod: record.showInEventPeriod !== false,
+    showInExpired: record.showInExpired === true,
     reminderOffsetDays: record.reminderOffsetDays ?? 2,
     publishedToPortals: record.publishedToPortals === true,
-    publicUrl: `/p/${partitionCode}/e/${eventCode}`,
-    qrPayload: `${record.publicBaseUrl ?? 'https://erp.local'}/p/${partitionCode}/e/${eventCode}`,
+    publicUrl: publicPath,
+    qrPayload: publicPath,
   };
 }
 
 export function mapEventDetail(record: AnyRecord) {
+  const notifications = [
+    mapNotificationTemplate('REGISTRATION', record.registrationNoticeTemplate),
+    mapNotificationTemplate('ANNOUNCEMENT', record.announcementNoticeTemplate),
+    mapNotificationTemplate('EVENT_UPDATE', record.eventUpdateNoticeTemplate),
+  ].filter((value): value is NonNullable<typeof value> => Boolean(value));
+
   return {
     event: {
       ...mapEventListItem(record),
       fields: toArray<any>(record.template?.formFields).map((field: any) => mapField(field)),
       dates: mapEventSlotsToDates(toArray<any>(record.slots)),
-      notifications: toArray<any>(record.notificationTemplates).map((notification: any) => ({
-        type: notification.templateType,
-        templateDocumentId: notification.noticeTemplate?.documentId,
-        templateName: notification.noticeTemplate?.name,
-        channel: notification.noticeTemplate?.channel,
-        subject: notification.noticeTemplate?.subject,
-        enabled: Boolean(notification.enabled),
-      })),
+      notifications,
     },
   };
 }

@@ -239,9 +239,23 @@ function resolveEventNoticeTemplate(event: AnyRecord | null, noticeType: string 
     return undefined;
   }
 
-  return toArray<any>(event.notificationTemplates).find(
-    (notification) => notification.templateType === noticeType && notification.noticeTemplate,
-  )?.noticeTemplate;
+  if (noticeType === 'REGISTRATION') {
+    return event.registrationNoticeTemplate;
+  }
+
+  if (noticeType === 'ANNOUNCEMENT') {
+    return event.announcementNoticeTemplate;
+  }
+
+  if (noticeType === 'EVENT_UPDATE') {
+    return event.eventUpdateNoticeTemplate;
+  }
+
+  return undefined;
+}
+
+function eventReleasedToPortals(event: AnyRecord) {
+  return getEventStatus(event) === 'RELEASED';
 }
 
 function eventVisibleInEcp(event: AnyRecord, scope: EcpScope | null) {
@@ -249,11 +263,41 @@ function eventVisibleInEcp(event: AnyRecord, scope: EcpScope | null) {
     return false;
   }
 
-  return matchesPartitionScope(event.userPartition?.code, scope.partitionCodes) && getEventStatus(event) !== 'CLOSED';
+  return matchesPartitionScope(event.userPartition?.code, scope.partitionCodes) && eventReleasedToPortals(event);
 }
 
 function eventVisibleInErp(event: AnyRecord) {
-  return event.publishedToPortals === true && getEventStatus(event) === 'RELEASED';
+  const status = getEventStatus(event);
+  const today = todayIso();
+  const withinRegistrationPeriod =
+    typeof event.registrationStartDate === 'string' &&
+    typeof event.registrationEndDate === 'string' &&
+    event.registrationStartDate <= today &&
+    today <= event.registrationEndDate;
+  const withinEventPeriod =
+    typeof event.eventStartDate === 'string' &&
+    typeof event.eventEndDate === 'string' &&
+    event.eventStartDate <= today &&
+    today <= event.eventEndDate;
+  const expired = typeof event.eventEndDate === 'string' && event.eventEndDate < today;
+
+  if ((status !== 'RELEASED' && status !== 'CLOSED') || status === 'DISABLED') {
+    return false;
+  }
+
+  if (status === 'CLOSED' && !(event.showInExpired === true && expired)) {
+    return false;
+  }
+
+  return (
+    (event.showInRegistrationPeriod !== false && withinRegistrationPeriod) ||
+    (event.showInEventPeriod !== false && withinEventPeriod) ||
+    (event.showInExpired === true && expired)
+  );
+}
+
+function appointmentVisibleInEcp(appointment: AnyRecord, scope: EcpScope | null) {
+  return eventVisibleInEcp(appointment.event ?? {}, scope);
 }
 
 function toItemResponse<T>(data: T) {
@@ -282,12 +326,12 @@ function sanitizeUser(record: AnyRecord) {
   const userGroups =
     portalRole === 'CLIENT_HR'
       ? toArray<any>(record.userGroups).map((group: AnyRecord) => ({
-          id: group.id,
-          documentId: group.documentId,
-          code: group.code,
-          description: group.description,
-          status: getUserGroupStatus(group),
-        }))
+        id: group.id,
+        documentId: group.documentId,
+        code: group.code,
+        description: group.description,
+        status: getUserGroupStatus(group),
+      }))
       : [];
 
   return {
@@ -304,12 +348,12 @@ function sanitizeUser(record: AnyRecord) {
     updatedAt: record.updatedAt,
     role: record.role
       ? {
-          id: record.role.id,
-          documentId: record.role.documentId,
-          name: record.role.name,
-          description: record.role.description,
-          type: record.role.type,
-        }
+        id: record.role.id,
+        documentId: record.role.documentId,
+        name: record.role.name,
+        description: record.role.description,
+        type: record.role.type,
+      }
       : null,
     userGroups,
   };
@@ -397,11 +441,9 @@ async function fetchEventDetailRecord(strapi: Core.Strapi, documentId: string) {
           formFields: true,
         },
       },
-      notificationTemplates: {
-        populate: {
-          noticeTemplate: true,
-        },
-      },
+      registrationNoticeTemplate: true,
+      announcementNoticeTemplate: true,
+      eventUpdateNoticeTemplate: true,
     },
   })) as AnyRecord | null;
 }
@@ -425,11 +467,9 @@ async function fetchEventDetailRecordByIdentifier(strapi: Core.Strapi, identifie
           formFields: true,
         },
       },
-      notificationTemplates: {
-        populate: {
-          noticeTemplate: true,
-        },
-      },
+      registrationNoticeTemplate: true,
+      announcementNoticeTemplate: true,
+      eventUpdateNoticeTemplate: true,
     },
     limit: 1,
   })) as AnyRecord[];
@@ -705,7 +745,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const scope = await fetchEcpScope(strapi, groupCode);
     const events = scope ? (await fetchEventList(strapi)).filter((event) => eventVisibleInEcp(event, scope)) : [];
     const appointments = scope
-      ? (await fetchAppointmentList(strapi)).filter((appointment) => matchesPartitionScope(appointment.event?.userPartition?.code, scope.partitionCodes))
+      ? (await fetchAppointmentList(strapi)).filter((appointment) => appointmentVisibleInEcp(appointment, scope))
       : [];
     const documents = scope ? await fetchPortalDocuments(strapi, 'ECP', scope.partitionCodes) : [];
 
@@ -759,7 +799,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       populate: {
         logo: true,
         banners: true,
-        userGroups: true,
+        userGroup: true,
       },
       limit: 1,
     })) as AnyRecord[];
@@ -770,8 +810,19 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       return null;
     }
 
+    const selectedPartitionDocumentId = String(selectedPartition.documentId ?? '');
+    const selectedPartitionCode = String(selectedPartition.code ?? '');
+
     const events = (await fetchEventList(strapi))
-      .filter((event) => event.userPartition?.code === partitionCode)
+      .filter((event) => {
+        const eventPartitionDocumentId = String(event.userPartition?.documentId ?? '');
+        const eventPartitionCode = String(event.userPartition?.code ?? '');
+
+        return (
+          (selectedPartitionDocumentId && eventPartitionDocumentId === selectedPartitionDocumentId) ||
+          (selectedPartitionCode && eventPartitionCode === selectedPartitionCode)
+        );
+      })
       .filter(eventVisibleInErp)
       .map(mapEventListItem);
 
@@ -793,7 +844,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     return mapEventDetail(event);
   },
 
-  async createHold(input: { eventDocumentId: string; eventSlotDocumentId: string }) {
+  async createHold(input: { eventDocumentId: string; eventSlotDocumentId: string; partitionCode: string }) {
     const slot = await findSlotWithEventContext(strapi, input.eventSlotDocumentId);
 
     if (!slot?.event) {
@@ -804,6 +855,14 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     if (event.documentId !== input.eventDocumentId) {
       throw new Error('Timeslot does not belong to the requested event');
+    }
+
+    if (event.userPartition?.code !== input.partitionCode) {
+      throw new Error('This event is not available in the requested partition');
+    }
+
+    if (!eventVisibleInErp(event)) {
+      throw new Error('This event is not available for ERP booking');
     }
 
     if (getEventStatus(event) === 'DISABLED' || getEventStatus(event) === 'CLOSED') {
@@ -852,6 +911,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async createBooking(input: {
     eventDocumentId: string;
     eventSlotDocumentId: string;
+    partitionCode: string;
     holdToken: string;
     participantName: string;
     staffNumber?: string;
@@ -871,6 +931,14 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     if (!event) {
       throw new Error('Event not found');
+    }
+
+    if (event.userPartition?.code !== input.partitionCode) {
+      throw new Error('This event is not available in the requested partition');
+    }
+
+    if (!eventVisibleInErp(event)) {
+      throw new Error('This event is not available for ERP booking');
     }
 
     const holdRecords = (await strapi.documents('plugin::event-portal.appointment-hold').findMany({
@@ -1117,8 +1185,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         eventStatus: 'RELEASED',
         publishedToPortals: true,
         releasedAt: nowIso(),
-        releasedByEmail: actorEmail,
-        lastModifiedByEmail: actorEmail,
       } as any,
     });
 
@@ -1295,7 +1361,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       data: {
         eventStatus: nextStatus,
         publishedToPortals: false,
-        lastModifiedByEmail: actorEmail,
       } as any,
     });
 
@@ -1330,7 +1395,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       data: {
         eventStatus: 'DISABLED',
         publishedToPortals: false,
-        lastModifiedByEmail: actorEmail,
       } as any,
     });
 

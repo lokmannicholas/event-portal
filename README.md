@@ -2,7 +2,7 @@
 
 This monorepo contains two applications:
 
-- `apps/eap` — unified Next.js frontend for EAP admin routes, ECP group routes, and ERP public routes
+- `apps/event-portal` — unified Next.js frontend for EAP admin routes, ECP group routes, and ERP public routes
 - `apps/strapi` — Strapi 5 TypeScript backend with schemas, portal APIs, and booking workflow stubs
 
 It follows the confirmed portal split and scheduling / booking model from the requirement and technical-spec draft:
@@ -17,8 +17,8 @@ It follows the confirmed portal split and scheduling / booking model from the re
 
 ```text
 apps/
-  eap/      Unified Next.js frontend for admin, client, and public routes
-  strapi/   Strapi 5 CMS / API / workflows
+  event-portal/  Unified Next.js frontend for admin, client, and public routes
+  strapi/        Strapi 5 CMS / API / workflows
 packages/
   contracts/ shared DTOs and sample fixtures
   ui/        shared React UI primitives
@@ -109,7 +109,7 @@ yarn dev:cms
 ### 4) Start the frontend
 
 ```bash
-yarn dev:eap
+yarn dev:event-portal
 ```
 
 ## Environment variables

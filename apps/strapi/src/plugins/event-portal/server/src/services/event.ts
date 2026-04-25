@@ -118,8 +118,6 @@ export default factories.createCoreService(uid, ({ strapi }: { strapi: Core.Stra
   },
 
   async syncEventSlots(documentId: string, rawEventSlots: unknown) {
-    console.log('[event] syncEventSlots documentId', documentId);
-    console.log('[event] syncEventSlots rawEventSlots', rawEventSlots);
     const event = await strapi.documents(uid).findOne({
       documentId,
       populate: {
@@ -128,7 +126,6 @@ export default factories.createCoreService(uid, ({ strapi }: { strapi: Core.Stra
     });
 
     if (!event) {
-      console.log('[event] syncEventSlots event not found');
       throw new Error('Event not found');
     }
 
@@ -157,7 +154,6 @@ export default factories.createCoreService(uid, ({ strapi }: { strapi: Core.Stra
         sortOrder: slot.sortOrder,
       };
 
-      console.log('[event] syncEventSlots data', data);
       if (slot.documentId) {
         await strapi.documents('plugin::event-portal.event-slot').update({
           documentId: slot.documentId,

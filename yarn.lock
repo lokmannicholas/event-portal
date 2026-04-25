@@ -1279,9 +1279,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@flu-vax/eap@workspace:apps/eap":
+"@flu-vax/event-portal@workspace:apps/event-portal":
   version: 0.0.0-use.local
-  resolution: "@flu-vax/eap@workspace:apps/eap"
+  resolution: "@flu-vax/event-portal@workspace:apps/event-portal"
   dependencies:
     "@types/node": "npm:^22"
     "@types/qrcode": "npm:^1"

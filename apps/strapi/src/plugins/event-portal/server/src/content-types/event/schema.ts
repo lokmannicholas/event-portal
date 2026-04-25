@@ -91,22 +91,38 @@ export default {
       "type": "boolean",
       "default": false
     },
+    "showInRegistrationPeriod": {
+      "type": "boolean",
+      "default": true
+    },
+    "showInEventPeriod": {
+      "type": "boolean",
+      "default": true
+    },
+    "showInExpired": {
+      "type": "boolean",
+      "default": false
+    },
     "releasedAt": {
       "type": "datetime"
-    },
-    "releasedByEmail": {
-      "type": "email"
-    },
-    "lastModifiedByEmail": {
-      "type": "email"
     },
     "publicBaseUrl": {
       "type": "string"
     },
-    "notificationTemplates": {
-      "type": "component",
-      "repeatable": true,
-      "component": "event-portal.template-message"
+    "registrationNoticeTemplate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.notice-template"
+    },
+    "announcementNoticeTemplate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.notice-template"
+    },
+    "eventUpdateNoticeTemplate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.notice-template"
     },
     "userPartition": {
       "type": "relation",

@@ -8,18 +8,18 @@ Use it when creating new pages, API wrappers, Strapi portal endpoints, DTOs, or 
 
 Apps in this repo:
 
-- `apps/eap` - unified Next.js frontend for EAP admin routes, ECP group routes, and ERP public routes
+- `apps/event-portal` - unified Next.js frontend for EAP admin routes, ECP group routes, and ERP public routes
 - `apps/strapi` - Strapi backend and workflow layer
 
 Shared frontend modules:
 
-- `apps/eap/lib/contracts` - DTOs, fixtures, and type contracts
-- `apps/eap/lib/ui` - UI primitives used by the EAP/ECP/ERP frontend
+- `apps/event-portal/lib/contracts` - DTOs, fixtures, and type contracts
+- `apps/event-portal/lib/ui` - UI primitives used by the EAP/ECP/ERP frontend
 
 ## How To Use This Guide
 
 1. Identify which runtime layer owns the feature.
-2. Inside `apps/eap`, identify which route area owns the change.
+2. Inside `apps/event-portal`, identify which route area owns the change.
 3. Apply the shared rules first.
 4. Follow the section for the owning route area or backend layer.
 5. If the change crosses frontend and backend layers, follow the preferred generation workflow near the end of this document.
@@ -29,20 +29,20 @@ Shared frontend modules:
 ```mermaid
 flowchart TD
     A[Start new feature or code generation task] --> B{Which layer owns the change?}
-    B -->|apps/eap| C{Which route area?}
+    B -->|apps/event-portal| C{Which route area?}
     B -->|apps/strapi| F[Read apps/strapi section]
-    C -->|Admin| D[Read apps/eap admin section]
-    C -->|Group client| E[Read apps/eap ECP route section]
-    C -->|Public registration| G[Read apps/eap ERP route section]
+    C -->|Admin| D[Read apps/event-portal admin section]
+    C -->|Group client| E[Read apps/event-portal ECP route section]
+    C -->|Public registration| G[Read apps/event-portal ERP route section]
     D --> H{Shared data or cross-layer impact?}
     E --> H
     G --> H
     F --> H
-    H -->|Yes| I[Update DTOs in apps/eap/lib/contracts]
+    H -->|Yes| I[Update DTOs in apps/event-portal/lib/contracts]
     H -->|No| J[Keep change inside owning route boundary]
     I --> K[Add or extend Strapi portal service and controller]
     K --> L[Map records in src/utils/mappers.ts]
-    L --> M[Expose typed API in apps/eap/lib or route-area helper]
+    L --> M[Expose typed API in apps/event-portal/lib or route-area helper]
     M --> N[Build page or component with @flu-vax/ui]
     J --> O{Is the feature interactive?}
     O -->|Yes| P[Use a client component only where needed]
@@ -58,14 +58,14 @@ flowchart TD
 ### Architecture
 
 - Keep the admin, client HR, and public participant route areas conceptually separate even though they now live in one frontend app.
-- Treat `apps/eap/lib/contracts` as the source of truth for shared DTO shapes.
+- Treat `apps/event-portal/lib/contracts` as the source of truth for shared DTO shapes.
 - Frontends should consume portal-oriented responses, not raw Strapi entity payloads.
 - Prefer extending existing portal endpoints under `/api/portal/*` before introducing new ad hoc frontend data paths.
 
 ### TypeScript and data flow
 
 - Preserve strict typing end to end.
-- Add or update DTOs in `apps/eap/lib/contracts/index.ts` before wiring new cross-app data.
+- Add or update DTOs in `apps/event-portal/lib/contracts/index.ts` before wiring new cross-app data.
 - Keep fallback fixture behavior when an app already uses it in `lib/api.ts`.
 - Do not duplicate DTO types inside app folders if the type belongs in shared contracts.
 
@@ -98,15 +98,15 @@ flowchart TD
 
 ## Frontend Route Areas
 
-### `apps/eap` admin routes
+### `apps/event-portal` admin routes
 
 Purpose: admin routes for partitions, groups, templates, events, appointments, documents, and support content.
 
 ### Generate code like this
 
-- Build new screens as App Router pages under `apps/eap/app/**/page.tsx`.
+- Build new screens as App Router pages under `apps/event-portal/app/**/page.tsx`.
 - Wrap pages with `EapShell`.
-- Load page data through `apps/eap/lib/api.ts`.
+- Load page data through `apps/event-portal/lib/api.ts`.
 - Use `Promise.all` when a page needs multiple independent datasets.
 - Prefer shared presentation components from `@flu-vax/ui` such as `Card`, `SimpleTable`, `StatGrid`, `SplitGrid`, and `StatusBadge`.
 
@@ -131,16 +131,16 @@ Purpose: admin routes for partitions, groups, templates, events, appointments, d
 - If the UI needs a new action, add a portal mutation endpoint instead of posting directly to raw collection APIs.
 - Preserve bilingual labels where the surrounding admin UI already uses them.
 
-### `apps/eap` ECP route area
+### `apps/event-portal` ECP route area
 
 Purpose: client HR routes for group-scoped event visibility, participant visibility, documents, and support content.
 
 ### Generate code like this
 
-- Build group-scoped screens under `apps/eap/app/ecp/[groupCode]/**/page.tsx`.
+- Build group-scoped screens under `apps/event-portal/app/ecp/[groupCode]/**/page.tsx`.
 - Wrap pages with `EcpShell`.
 - Keep group scoping explicit in data fetches by using `groupCode`.
-- Route all app data access through the dedicated ECP helpers in `apps/eap/lib/ecp-api.ts`.
+- Route all app data access through the dedicated ECP helpers in `apps/event-portal/lib/ecp-api.ts`.
 - Render event and appointment data using shared DTOs from `@flu-vax/contracts`.
 
 ### Keep these boundaries
@@ -163,17 +163,17 @@ Purpose: client HR routes for group-scoped event visibility, participant visibil
 - Keep ERP links and appointment views read-oriented unless a business rule explicitly allows an action such as cancellation.
 - Preserve the group-based route pattern using `/ecp/{groupCode}`.
 
-### `apps/eap` ERP route area
+### `apps/event-portal` ERP route area
 
 Purpose: public registration routes for partition landing, event discovery, booking, enquiry, and public cancellation flows.
 
 ### Generate code like this
 
-- Keep public entry routes under `apps/eap/app/p/[partitionCode]/**`.
+- Keep public entry routes under `apps/event-portal/app/p/[partitionCode]/**`.
 - Wrap pages with `ErpShell`.
 - Keep landing and detail pages server-rendered where possible.
-- Isolate booking or enquiry interactivity in client components such as `apps/eap/components/booking-form.tsx`.
-- Use typed helper functions in `apps/eap/lib/erp-api.ts` for landing, detail, hold, booking, and enquiry calls.
+- Isolate booking or enquiry interactivity in client components such as `apps/event-portal/components/booking-form.tsx`.
+- Use typed helper functions in `apps/event-portal/lib/erp-api.ts` for landing, detail, hold, booking, and enquiry calls.
 
 ### Keep these boundaries
 
@@ -212,7 +212,7 @@ Purpose: backend schemas, portal-oriented read models, and booking workflow orch
 
 - Strapi owns persistence, workflow rules, and DTO assembly.
 - Controllers should not hold business rules.
-- Portal services should return stable DTOs that match `apps/eap/lib/contracts`.
+- Portal services should return stable DTOs that match `apps/event-portal/lib/contracts`.
 - Do not leak raw Strapi response shapes to the frontend when a mapper-backed DTO exists.
 
 ### Required patterns for new backend work
@@ -243,7 +243,7 @@ Purpose: backend schemas, portal-oriented read models, and booking workflow orch
 
 Before finishing generated work, verify:
 
-- DTOs are defined or updated in `apps/eap/lib/contracts` when shared data changed.
+- DTOs are defined or updated in `apps/event-portal/lib/contracts` when shared data changed.
 - The frontend app calls `lib/api.ts` instead of embedding raw fetch logic in many pages.
 - ECP and ERP route areas call `lib/ecp-api.ts` or `lib/erp-api.ts` instead of embedding raw fetch logic in pages.
 - The Strapi portal layer returns the DTO shape the frontend expects.
@@ -255,7 +255,7 @@ Before finishing generated work, verify:
 
 When adding a feature that spans apps, implement in this order:
 
-1. Update or add shared DTOs in `apps/eap/lib/contracts`.
+1. Update or add shared DTOs in `apps/event-portal/lib/contracts`.
 2. Add or extend Strapi portal service and controller methods.
 3. Map Strapi records to DTOs in `src/utils/mappers.ts`.
 4. Expose the new endpoint through the target frontend helper such as `lib/api.ts`, `lib/ecp-api.ts`, or `lib/erp-api.ts`.

@@ -729,6 +729,10 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    announcementNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
     appointments: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.appointment'
@@ -756,11 +760,14 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
       ['DRAFT', 'RELEASED', 'DISABLED', 'CLOSED']
     > &
       Schema.Attribute.DefaultTo<'DRAFT'>;
+    eventUpdateNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
     holds: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.appointment-hold'
     >;
-    lastModifiedByEmail: Schema.Attribute.Email;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -769,21 +776,25 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     location: Schema.Attribute.String & Schema.Attribute.Required;
     locationZh: Schema.Attribute.String;
-    notificationTemplates: Schema.Attribute.Component<
-      'event-portal.template-message',
-      true
-    >;
     publicBaseUrl: Schema.Attribute.String;
     publicSlug: Schema.Attribute.UID<'eventName'>;
     publishedAt: Schema.Attribute.DateTime;
     publishedToPortals: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
     registrationEndDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    registrationNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
     registrationStartDate: Schema.Attribute.Date & Schema.Attribute.Required;
     releasedAt: Schema.Attribute.DateTime;
-    releasedByEmail: Schema.Attribute.Email;
     reminderOffsetDays: Schema.Attribute.Integer &
       Schema.Attribute.DefaultTo<2>;
+    showInEventPeriod: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    showInExpired: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showInRegistrationPeriod: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
     slots: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.event-slot'
