@@ -10,6 +10,7 @@ export function PortalShell(props: {
   title: string;
   subtitle?: string;
   nav: NavItem[];
+  portalKind?: 'admin' | 'client' | 'registration';
   brandImageSrc?: string;
   brandImageAlt?: string;
   headerCaption?: string;
@@ -18,36 +19,55 @@ export function PortalShell(props: {
   headerNote?: ReactNode;
   hideAside?: boolean;
 }) {
-  const { portal, title, subtitle, nav, brandImageSrc, brandImageAlt, headerCaption, children, asideNote, headerNote, hideAside } = props;
+  const {
+    portal,
+    title,
+    subtitle,
+    nav,
+    portalKind = 'admin',
+    brandImageSrc,
+    brandImageAlt,
+    headerCaption,
+    children,
+    asideNote,
+    headerNote,
+    hideAside,
+  } = props;
   const portalCode = resolvePortalCode(portal);
   const landingHref = findFirstHref(nav) ?? '/';
+  const headerSummary = headerCaption ?? 'Flu Vaccination Platform workspace';
+  const brandMark = (
+    <span className={`portal-brand-mark${brandImageSrc ? ' is-image' : ''}`}>
+      {brandImageSrc ? <img src={brandImageSrc} alt={brandImageAlt ?? `${portalCode} logo`} /> : <span className="portal-brand-glyph" aria-hidden="true" />}
+    </span>
+  );
 
   if (hideAside) {
     return (
-      <div className="auth-main">
-        <div className="auth-wrapper">
-          <div className="auth-form">
-            <div className="auth-bg">
-              <span className="auth-orb auth-orb-primary auth-orb-top" />
-              <span className="auth-orb auth-orb-secondary auth-orb-right" />
-              <span className="auth-orb auth-orb-primary auth-orb-bottom" />
-            </div>
-            <div className="portal-auth-shell">
-              <Link href={landingHref} className="portal-brand portal-brand-auth">
-                <span className={`portal-brand-mark${brandImageSrc ? ' is-image' : ''}`} aria-hidden="true">
-                  {brandImageSrc ? <img src={brandImageSrc} alt={brandImageAlt ?? `${portalCode} logo`} /> : <span />}
-                </span>
-                <span className="portal-brand-copy">
-                  <strong>{portalCode}</strong>
-                  <span>{portal}</span>
-                </span>
-              </Link>
-              <div className="portal-auth-header">
-                <div className="portal-section-label">Secure Access</div>
-                <h1>{title}</h1>
-                {subtitle ? <p>{subtitle}</p> : null}
+      <div className="portal-shell portal-shell-auth" data-portal-kind={portalKind}>
+        <div className="auth-main">
+          <div className="auth-wrapper">
+            <div className="auth-form">
+              <div className="auth-bg">
+                <span className="auth-orb auth-orb-primary auth-orb-top" />
+                <span className="auth-orb auth-orb-secondary auth-orb-right" />
+                <span className="auth-orb auth-orb-primary auth-orb-bottom" />
               </div>
-              <div className="portal-auth-content">{children}</div>
+              <div className="portal-auth-shell">
+                <Link href={landingHref} className="portal-brand portal-brand-auth">
+                  {brandMark}
+                  <span className="portal-brand-copy">
+                    <strong>{portalCode}</strong>
+                    <span>{portal}</span>
+                  </span>
+                </Link>
+                <div className="portal-auth-header">
+                  <div className="portal-section-label">Secure Access</div>
+                  <h1>{title}</h1>
+                  {subtitle ? <p>{subtitle}</p> : null}
+                </div>
+                <div className="portal-auth-content">{children}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -56,14 +76,12 @@ export function PortalShell(props: {
   }
 
   return (
-    <>
+    <div className="portal-shell" data-portal-kind={portalKind}>
       <aside className="pc-sidebar">
         <div className="navbar-wrapper">
           <div className="m-header">
             <Link href={landingHref} className="portal-brand">
-              <span className={`portal-brand-mark${brandImageSrc ? ' is-image' : ''}`} aria-hidden="true">
-                {brandImageSrc ? <img src={brandImageSrc} alt={brandImageAlt ?? `${portalCode} logo`} /> : <span />}
-              </span>
+              {brandMark}
               <span className="portal-brand-copy">
                 <strong>{portalCode}</strong>
                 <span>{portal}</span>
@@ -84,7 +102,7 @@ export function PortalShell(props: {
             <PortalSidebarToggle />
             <div>
               <div className="portal-header-label">{portal}</div>
-              <div className="portal-header-caption">{headerCaption ?? 'Flu Vaccination Platform workspace'}</div>
+              <div className="portal-header-caption">{headerSummary}</div>
             </div>
           </div>
           <div className="portal-header-right">
@@ -97,11 +115,22 @@ export function PortalShell(props: {
       <div className="pc-container">
         <div className="pc-content">
           <div className="page-header">
-            <div className="page-block">
-              <div className="page-header-title">
-                <div className="portal-section-label">{portalCode}</div>
-                <h1>{title}</h1>
-                {subtitle ? <p>{subtitle}</p> : null}
+            <div className="page-header-surface">
+              <div className="page-block">
+                <div className="page-header-title">
+                  <div className="portal-section-label">{portalCode}</div>
+                  <h1>{title}</h1>
+                  {subtitle ? <p>{subtitle}</p> : null}
+                </div>
+                <div className="page-header-meta">
+                  <div className={`page-header-brand${brandImageSrc ? ' is-image' : ''}`}>
+                    {brandImageSrc ? <img src={brandImageSrc} alt={brandImageAlt ?? `${portalCode} logo`} /> : <span>{portalCode}</span>}
+                  </div>
+                  <div className="page-header-meta-copy">
+                    <span>{headerSummary}</span>
+                    <strong>{portal}</strong>
+                  </div>
+                </div>
               </div>
               <ul className="breadcrumb">
                 <li className="breadcrumb-item">
@@ -116,7 +145,7 @@ export function PortalShell(props: {
       </div>
 
       <PortalSidebarOverlay />
-    </>
+    </div>
   );
 }
 

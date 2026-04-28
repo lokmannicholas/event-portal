@@ -31,6 +31,7 @@ export async function EcpShell(props: {
   return (
     <PortalShell
       portal="Event Client Portal (ECP)"
+      portalKind="client"
       title={props.title}
       subtitle={props.subtitle}
       nav={props.hideNav ? [] : buildEcpNav(props.groupCode)}

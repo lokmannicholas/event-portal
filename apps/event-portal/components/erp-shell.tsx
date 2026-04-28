@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { InlineNotice, PortalShell } from '@flu-vax/ui';
 import { buildErpNav } from '../lib/erp-nav';
 import { getErpLanding } from '../lib/erp-api';
+import { toAbsoluteStrapiMediaUrl } from '../lib/strapi-media';
 
 export async function ErpShell(props: {
   title: string;
@@ -10,15 +11,20 @@ export async function ErpShell(props: {
   partitionCode?: string;
   headerCaption?: string;
 }) {
-  const landing = !props.headerCaption && props.partitionCode ? await getErpLanding(props.partitionCode) : undefined;
+  const landing = props.partitionCode ? await getErpLanding(props.partitionCode) : undefined;
   const headerCaption = props.headerCaption ?? landing?.partition.groupCompanyName;
+  const brandImageSrc = toAbsoluteStrapiMediaUrl(landing?.partition.logo?.url);
+  const brandImageAlt = landing?.partition.logo?.alternativeText ?? (landing ? `${landing.partition.code} logo` : undefined);
 
   return (
     <PortalShell
       portal="Event Registration Portal (ERP)"
+      portalKind="registration"
       title={props.title}
       subtitle={props.subtitle}
       nav={buildErpNav(props.partitionCode)}
+      brandImageSrc={brandImageSrc}
+      brandImageAlt={brandImageAlt}
       headerCaption={headerCaption}
       asideNote={
         <div className="portal-sidebar-stack">

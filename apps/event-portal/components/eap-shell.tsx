@@ -13,6 +13,7 @@ export async function EapShell(props: { title: string; subtitle?: string; childr
   return (
     <PortalShell
       portal="Event Admin Portal (EAP)"
+      portalKind="admin"
       title={props.title}
       subtitle={props.subtitle}
       nav={props.hideNav ? [] : eapNav}
