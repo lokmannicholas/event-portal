@@ -1,30 +1,26 @@
 # syntax=docker/dockerfile:1.7
 
 FROM node:22-bookworm-slim AS base
-RUN corepack enable
-WORKDIR /workspace
+RUN corepack enable && corepack prepare yarn@4.2.1 --activate
+WORKDIR /app
 
 FROM base AS deps
-COPY package.json .yarnrc.yml tsconfig.base.json ./
-COPY types ./types
-COPY apps/strapi/package.json ./apps/strapi/package.json
+COPY package.json ./
+RUN printf 'nodeLinker: node-modules\n' > .yarnrc.yml
 RUN yarn install
 
 FROM deps AS builder
-COPY apps/strapi ./apps/strapi
-RUN yarn workspace @flu-vax/cms build
+ENV NODE_ENV=production
+COPY . .
+RUN yarn build
 
 FROM base AS runner
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=1337
-COPY --from=deps /workspace/node_modules ./node_modules
-COPY --from=deps /workspace/apps/strapi/node_modules ./apps/strapi/node_modules
-COPY --from=builder /workspace/package.json ./package.json
-COPY --from=builder /workspace/.yarnrc.yml ./.yarnrc.yml
-COPY --from=builder /workspace/tsconfig.base.json ./tsconfig.base.json
-COPY --from=builder /workspace/types ./types
-COPY --from=builder /workspace/apps/strapi ./apps/strapi
-WORKDIR /workspace/apps/strapi
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/.yarnrc.yml ./.yarnrc.yml
+COPY --from=builder /app ./
 EXPOSE 1337
-CMD ["yarn", "strapi", "start"]
+CMD ["yarn", "start"]

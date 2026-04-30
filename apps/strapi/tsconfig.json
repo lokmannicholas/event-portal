@@ -1,17 +1,24 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
     "target": "ES2022",
     "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": false,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
     "rootDir": ".",
     "outDir": "dist",
-    "noEmit": true,
-    "jsx": "react-jsx"
+    "noEmit": true
   },
   "include": [
-    "../../types/**/*.d.ts",
+    "types/**/*.d.ts",
     "src/**/*.ts",
     "config/**/*.ts",
     "scripts/**/*.ts"

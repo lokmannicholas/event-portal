@@ -1,4 +1,5 @@
-import { Card, SimpleTable, SplitGrid, Stack, StatGrid, StatusBadge } from '@flu-vax/ui';
+import Link from 'next/link';
+import { Card, SimpleTable, Stack, StatGrid, StatusBadge } from '@flu-vax/ui';
 import { EapShell } from '../components/eap-shell';
 import { getAppointments, getDashboard, getEvents } from '../lib/api';
 
@@ -8,17 +9,64 @@ export default async function Page() {
     getEvents(),
     getAppointments(),
   ]);
+  const releasedOrActiveEvents = eventRows.filter((event) => /(RELEASED|ACTIVE)/i.test(event.status)).length;
+  const confirmedAppointments = appointmentRows.filter((appointment) => /CONFIRMED/i.test(appointment.status)).length;
 
   return (
     <EapShell
       title="Dashboard"
       subtitle="Admin entry point for partitions, templates, event release, appointments, portal documents, and support content."
     >
-      <Stack>
+      <Stack gap={24}>
+        <section className="portal-dashboard-hero">
+          <div className="portal-dashboard-hero-copy">
+            <div className="portal-section-label">EAP Operations</div>
+            <h2>Vaccination campaign control centre</h2>
+            <p>
+              Prepare event templates, release registration windows, and monitor bookings across the admin, client,
+              and public registration portals from one workspace.
+            </p>
+            <div className="portal-dashboard-actions">
+              <Link href="/events/new" className="btn btn-primary">
+                Create event
+              </Link>
+              <Link href="/appointments" className="btn btn-secondary">
+                Review bookings
+              </Link>
+              <Link href="/templates" className="btn btn-outline-secondary">
+                Manage templates
+              </Link>
+            </div>
+          </div>
+
+          <div className="portal-dashboard-panel">
+            <div className="portal-dashboard-panel-title">Live overview</div>
+            <div className="portal-dashboard-panel-metric">
+              <strong>{releasedOrActiveEvents}</strong>
+              <span>released or active events now visible downstream</span>
+            </div>
+            <div className="portal-summary-list">
+              {eventRows.slice(0, 3).map((event) => (
+                <div key={event.documentId} className="portal-summary-item">
+                  <div className="portal-summary-item-header">
+                    <div>
+                      <strong>{event.eventName}</strong>
+                      <span>
+                        {event.partitionCode} · {event.location}
+                      </span>
+                    </div>
+                    <StatusBadge value={event.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <StatGrid items={dashboard.stats} />
 
-        <SplitGrid
-          left={
+        <div className="portal-insight-grid">
+          <div>
             <Card
               title="Released and draft events"
               description="Events move from Draft to Released or Active after release. Disabled events remain visible, while Closed events disappear from ERP."
@@ -32,9 +80,9 @@ export default async function Page() {
                 ]}
                 rows={eventRows.map((event) => ({
                   eventName: (
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{event.eventName}</div>
-                      <div style={{ color: '#5b677a', fontSize: '13px' }}>{event.location}</div>
+                    <div className="portal-table-entity">
+                      <div className="portal-table-entity-title">{event.eventName}</div>
+                      <div className="portal-table-entity-meta">{event.location}</div>
                     </div>
                   ),
                   partition: event.partitionCode,
@@ -43,21 +91,48 @@ export default async function Page() {
                 }))}
               />
             </Card>
-          }
-          right={
+          </div>
+
+          <div className="portal-insight-stack">
             <Card
-              title="Operational reminders"
-              description="This scaffold keeps the workflow boundaries visible before wiring in authentication, notification providers, and transaction-safe slot locking."
+              title="Release checklist"
+              description="Keep the rollout sequence aligned before exposing new booking windows to clients and ERP users."
             >
-              <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: 1.8 }}>
-                <li>Generate events from templates</li>
-                <li>Release only when registration rules are correct</li>
-                <li>Keep cancellation history for audit purposes</li>
-                <li>Use partition-level URLs and QR payloads</li>
+              <ul className="portal-list-tight">
+                <li>Generate events from the correct template and review the mandatory fields.</li>
+                <li>Confirm slot capacity, release window, and client-facing notice content.</li>
+                <li>Validate partition URLs, QR payloads, and contact details before publishing.</li>
+                <li>Keep cancellation and status transitions visible for audit follow-up.</li>
               </ul>
             </Card>
-          }
-        />
+
+            <Card
+              title="Booking movement"
+              description="Recent appointment activity helps verify whether released events are converting as expected."
+            >
+              <div className="portal-dashboard-panel-metric">
+                <strong>{confirmedAppointments}</strong>
+                <span>confirmed bookings across the current appointment dataset</span>
+              </div>
+              <div className="portal-feed-list">
+                {appointmentRows.slice(0, 4).map((appointment) => (
+                  <div key={appointment.documentId} className="portal-feed-item">
+                    <div className="portal-feed-item-header">
+                      <div>
+                        <strong>{appointment.participantName}</strong>
+                        <span>{appointment.bookingReference}</span>
+                      </div>
+                      <StatusBadge value={appointment.status} />
+                    </div>
+                    <div className="portal-feed-meta">
+                      {appointment.appointmentDate} · {appointment.appointmentStartTime}-{appointment.appointmentEndTime}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
 
         <Card
           title="Recent appointments"
@@ -73,9 +148,9 @@ export default async function Page() {
             rows={appointmentRows.slice(0, 5).map((appointment) => ({
               booking: appointment.bookingReference,
               participant: (
-                <div>
-                  <div style={{ fontWeight: 700 }}>{appointment.participantName}</div>
-                  <div style={{ color: '#5b677a', fontSize: '13px' }}>{appointment.registeredEmail ?? appointment.mobileNumber ?? '-'}</div>
+                <div className="portal-table-entity">
+                  <div className="portal-table-entity-title">{appointment.participantName}</div>
+                  <div className="portal-table-entity-meta">{appointment.registeredEmail ?? appointment.mobileNumber ?? '-'}</div>
                 </div>
               ),
               slot: `${appointment.appointmentDate} ${appointment.appointmentStartTime}-${appointment.appointmentEndTime}`,

@@ -1,30 +1,27 @@
 # syntax=docker/dockerfile:1.7
 
 FROM node:22-alpine AS base
-RUN corepack enable
-WORKDIR /workspace
+RUN corepack enable && corepack prepare yarn@4.2.1 --activate
+WORKDIR /app
 
 FROM base AS deps
-COPY package.json .yarnrc.yml tsconfig.base.json ./
-COPY types ./types
-COPY apps/event-portal/package.json ./apps/event-portal/package.json
+COPY package.json ./
+RUN printf 'nodeLinker: node-modules\n' > .yarnrc.yml
 RUN yarn install
 
 FROM deps AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
-COPY apps/event-portal ./apps/event-portal
-RUN yarn workspace @flu-vax/event-portal build
+COPY . .
+RUN yarn build
 
-FROM base AS runner
+FROM node:22-alpine AS runner
+WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-COPY --from=deps /workspace/node_modules ./node_modules
-COPY --from=deps /workspace/apps/event-portal/node_modules ./apps/event-portal/node_modules
-COPY --from=builder /workspace/package.json ./package.json
-COPY --from=builder /workspace/.yarnrc.yml ./.yarnrc.yml
-COPY --from=builder /workspace/tsconfig.base.json ./tsconfig.base.json
-COPY --from=builder /workspace/types ./types
-COPY --from=builder /workspace/apps/event-portal ./apps/event-portal
-WORKDIR /workspace/apps/event-portal
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next/static ./apps/event-portal/.next/static
 EXPOSE 3000
-CMD ["yarn", "next", "start", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["sh", "-c", "node server.js || node apps/event-portal/server.js"]
