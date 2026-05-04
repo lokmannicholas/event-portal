@@ -1,6 +1,6 @@
 # Code Generation Guidelines
 
-This document defines how generated code should fit into the Flu Vaccination Platform monorepo.
+This document defines how generated code should fit into the Event Portal monorepo.
 
 Use it when creating new pages, API wrappers, Strapi portal endpoints, DTOs, or workflow code.
 
@@ -43,7 +43,7 @@ flowchart TD
     I --> K[Add or extend Strapi portal service and controller]
     K --> L[Map records in src/utils/mappers.ts]
     L --> M[Expose typed API in apps/event-portal/lib or route-area helper]
-    M --> N[Build page or component with @flu-vax/ui]
+    M --> N[Build page or component with @event-portal/ui]
     J --> O{Is the feature interactive?}
     O -->|Yes| P[Use a client component only where needed]
     O -->|No| Q[Prefer server-rendered page/component]
@@ -76,7 +76,7 @@ flowchart TD
 - Keep page files focused on composition and data loading.
 - Put app-specific layout wrappers in `components/*-shell.tsx`.
 - Put app-specific fetch wrappers in `lib/api.ts`.
-- Reuse `@flu-vax/ui` primitives before adding one-off layout components.
+- Reuse `@event-portal/ui` primitives before adding one-off layout components.
 
 ### Backend conventions
 
@@ -108,7 +108,7 @@ Purpose: admin routes for partitions, groups, templates, events, appointments, d
 - Wrap pages with `EapShell`.
 - Load page data through `apps/event-portal/lib/api.ts`.
 - Use `Promise.all` when a page needs multiple independent datasets.
-- Prefer shared presentation components from `@flu-vax/ui` such as `Card`, `SimpleTable`, `StatGrid`, `SplitGrid`, and `StatusBadge`.
+- Prefer shared presentation components from `@event-portal/ui` such as `Card`, `SimpleTable`, `StatGrid`, `SplitGrid`, and `StatusBadge`.
 
 ### Keep these boundaries
 
@@ -141,7 +141,7 @@ Purpose: client HR routes for group-scoped event visibility, participant visibil
 - Wrap pages with `EcpShell`.
 - Keep group scoping explicit in data fetches by using `groupCode`.
 - Route all app data access through the dedicated ECP helpers in `apps/event-portal/lib/ecp-api.ts`.
-- Render event and appointment data using shared DTOs from `@flu-vax/contracts`.
+- Render event and appointment data using shared DTOs from `@event-portal/contracts`.
 
 ### Keep these boundaries
 
@@ -259,5 +259,5 @@ When adding a feature that spans apps, implement in this order:
 2. Add or extend Strapi portal service and controller methods.
 3. Map Strapi records to DTOs in `src/utils/mappers.ts`.
 4. Expose the new endpoint through the target frontend helper such as `lib/api.ts`, `lib/ecp-api.ts`, or `lib/erp-api.ts`.
-5. Build the page or component in the target app using `@flu-vax/ui`.
+5. Build the page or component in the target app using `@event-portal/ui`.
 6. Keep fixture fallback behavior if that app already depends on it.

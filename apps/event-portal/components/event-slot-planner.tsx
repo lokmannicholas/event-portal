@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { EventDateDTO } from '@flu-vax/contracts';
+import type { EventDateDTO } from '@event-portal/contracts';
 import type { EventPortalEventSlotPayload } from '../lib/event-portal-types';
 
 type SlotRow = {

@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "c1b2b0f3-6f6c-4d30-b6cc-5e44a3c4c6e1",
-    "name": "Flu Vax Strapi API Flow",
+    "name": "Event Portal Strapi API Flow",
     "description": "Postman collection for the Strapi event-portal plugin. Run the folders in order, or run the whole collection. Core CRUD requests use `strapiToken`, which can be either a Strapi API token or a JWT obtained from the optional login request. The flow creates dependent records in order: mandatory field -> user partition -> user group -> contact info -> event template -> event -> event slot -> ERP hold -> ERP booking -> audit log lookup, then deletes them in reverse order.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -431,7 +431,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"data\":{\"name\":\"{{templateName}}\",\"description\":\"Postman template {{runId}}\",\"companyName\":\"Acme Health\",\"location\":\"Central Clinic\",\"eventName\":\"{{eventName}}\",\"eventDescription\":\"Template-driven flu vaccination event\",\"defaultEventStartDate\":\"{{eventStartDate}}\",\"defaultEventEndDate\":\"{{eventEndDate}}\",\"dayStartTime\":\"09:00:00.000\",\"dayEndTime\":\"10:00:00.000\",\"timeslotDurationMinutes\":30,\"quotaPerSlot\":4,\"registrationStartDate\":\"{{registrationStartDate}}\",\"registrationEndDate\":\"{{registrationEndDate}}\",\"eventTemplateStatus\":\"ACTIVE\",\"userPartition\":\"{{userPartitionDocumentId}}\",\"formFields\":[{\"fieldKey\":\"participant_name\",\"labelEn\":\"Participant name\",\"fieldType\":\"TEXT\",\"required\":true,\"visibleInErp\":true,\"visibleInEcp\":true,\"visibleInEap\":true,\"sortOrder\":10}]}}",
+              "raw": "{\"data\":{\"name\":\"{{templateName}}\",\"description\":\"Postman template {{runId}}\",\"companyName\":\"Acme Health\",\"location\":\"Central Clinic\",\"eventName\":\"{{eventName}}\",\"eventDescription\":\"Template-driven event\",\"defaultEventStartDate\":\"{{eventStartDate}}\",\"defaultEventEndDate\":\"{{eventEndDate}}\",\"dayStartTime\":\"09:00:00.000\",\"dayEndTime\":\"10:00:00.000\",\"timeslotDurationMinutes\":30,\"quotaPerSlot\":4,\"registrationStartDate\":\"{{registrationStartDate}}\",\"registrationEndDate\":\"{{registrationEndDate}}\",\"eventTemplateStatus\":\"ACTIVE\",\"userPartition\":\"{{userPartitionDocumentId}}\",\"formFields\":[{\"fieldKey\":\"participant_name\",\"labelEn\":\"Participant name\",\"fieldType\":\"TEXT\",\"required\":true,\"visibleInErp\":true,\"visibleInEcp\":true,\"visibleInEap\":true,\"sortOrder\":10}]}}",
               "options": {
                 "raw": {
                   "language": "json"

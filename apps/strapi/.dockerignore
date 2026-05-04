@@ -1,8 +1,10 @@
 node_modules
 .strapi
+.yarn
 dist
 build
 .cache
 tmp
+coverage
 *.log
 .env

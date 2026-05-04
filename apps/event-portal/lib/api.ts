@@ -13,7 +13,7 @@ import type {
   UserAccountDTO,
   UserGroupDTO,
   UserPartitionDTO,
-} from '@flu-vax/contracts';
+} from '@event-portal/contracts';
 import { eventPortalQueries, eventPortalSdk, type EventPortalFieldConfigComponent, type EventPortalMandatoryFieldEntity } from './event-portal-sdk';
 
 type AnyRecord = Record<string, any>;

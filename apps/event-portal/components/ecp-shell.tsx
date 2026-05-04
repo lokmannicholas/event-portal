@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InlineNotice, PortalShell } from '@flu-vax/ui';
+import { InlineNotice, PortalShell } from '@event-portal/ui';
 import { changeEcpPasswordAction } from '../app/actions/portal-account-actions';
 import { buildEcpNav } from '../lib/ecp-nav';
 import { logoutEcpAction } from '../app/actions/ecp-auth-actions';
@@ -37,7 +37,7 @@ export async function EcpShell(props: {
       nav={props.hideNav ? [] : buildEcpNav(props.groupCode)}
       brandImageSrc={brandImageSrc}
       brandImageAlt={brandImageAlt}
-      headerCaption={group?.companyName || 'Flu Vaccination Platform workspace'}
+      headerCaption={group?.companyName || 'Event Portal workspace'}
       hideAside={props.hideAside}
       headerNote={
         session ? (

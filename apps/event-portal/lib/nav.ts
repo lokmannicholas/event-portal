@@ -1,4 +1,4 @@
-import type { NavItem } from '@flu-vax/ui';
+import type { NavItem } from '@event-portal/ui';
 
 export const eapNav: NavItem[] = [
   { href: '/', label: 'Dashboard / 主頁' },

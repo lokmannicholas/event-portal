@@ -1,4 +1,4 @@
-import { Card, InlineNotice, Stack } from '@flu-vax/ui';
+import { Card, InlineNotice, Stack } from '@event-portal/ui';
 import { loginEcpAction } from '../../../actions/ecp-auth-actions';
 import { EcpShell } from '../../../../components/ecp-shell';
 

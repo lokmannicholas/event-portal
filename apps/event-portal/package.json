@@ -1,6 +1,7 @@
 {
-  "name": "@flu-vax/event-portal",
+  "name": "event-portal",
   "private": true,
+  "packageManager": "yarn@1.22.22",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

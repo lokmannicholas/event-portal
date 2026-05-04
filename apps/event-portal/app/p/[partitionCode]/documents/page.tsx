@@ -1,4 +1,4 @@
-import { Card, SimpleTable, Stack } from '@flu-vax/ui';
+import { Card, SimpleTable, Stack } from '@event-portal/ui';
 import { ErpShell } from '../../../../components/erp-shell';
 import { getErpDocuments } from '../../../../lib/erp-api';
 

@@ -1,4 +1,4 @@
-import { Card, EmptyState, SimpleTable, Stack, StatusBadge } from '@flu-vax/ui';
+import { Card, EmptyState, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import { ErpShell } from '../../../components/erp-shell';
 import { getErpLanding } from '../../../lib/erp-api';
 import { toAbsoluteStrapiMediaUrl } from '../../../lib/strapi-media';

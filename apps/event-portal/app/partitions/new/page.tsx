@@ -1,4 +1,4 @@
-import { Card, Stack } from '@flu-vax/ui';
+import { Card, Stack } from '@event-portal/ui';
 import { createRecordAction } from '../../actions/eap-record-actions';
 import { ActionLink, ActionRow, Field, FileField, FormGrid, NoticeBanner, SelectField, SubmitRow, TextAreaField } from '../../../components/admin-forms';
 import { EapShell } from '../../../components/eap-shell';

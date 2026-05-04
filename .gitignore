@@ -15,5 +15,5 @@ apps/strapi/.cache
 apps/strapi/data
 apps/*/.env
 apps/*/.next
+apps/*/.yarn
 apps/*/node_modules
-packages/*/node_modules

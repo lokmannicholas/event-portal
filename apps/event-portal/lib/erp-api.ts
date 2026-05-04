@@ -9,7 +9,7 @@ import type {
   HoldResponseDTO,
   PartitionLandingDTO,
   PortalDocumentDTO,
-} from '@flu-vax/contracts';
+} from '@event-portal/contracts';
 import { getStrapiBaseUrl } from './strapi-base-url';
 
 const STRAPI_URL = getStrapiBaseUrl();

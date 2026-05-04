@@ -9,7 +9,7 @@ import type {
   EventStatus,
   GroupStatus,
   PortalRole,
-} from '@flu-vax/contracts';
+} from '@event-portal/contracts';
 import { StrapiRequestError, eventPortalSdk } from '../../lib/event-portal-sdk';
 import { eventPortalQueries } from '../../lib/event-portal-sdk';
 import { clearCreateDraft, persistCreateDraft, type EapCreateDraftKind } from '../../lib/eap-create-drafts';

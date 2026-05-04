@@ -1,5 +1,5 @@
 import { ActionLink, ActionRow } from '../../components/admin-forms';
-import { Card, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@flu-vax/ui';
+import { Card, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { getNoticeTemplates } from '../../lib/api';
 

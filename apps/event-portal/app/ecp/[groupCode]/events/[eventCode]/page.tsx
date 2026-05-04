@@ -1,4 +1,4 @@
-import { Card, EmptyState, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@flu-vax/ui';
+import { Card, EmptyState, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@event-portal/ui';
 import { EcpShell } from '../../../../../components/ecp-shell';
 import { ErpPathSummary } from '../../../../../components/erp-path-summary';
 import { getEcpAppointmentsForEvent, getEcpEventDetail } from '../../../../../lib/ecp-api';

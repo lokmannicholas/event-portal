@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { InlineNotice } from '@flu-vax/ui';
+import { InlineNotice } from '@event-portal/ui';
 import { getNoticeContent } from '../lib/eap-records';
 import { ChipMultiSelectField } from './chip-multi-select-field';
 

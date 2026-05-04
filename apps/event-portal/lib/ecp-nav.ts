@@ -1,4 +1,4 @@
-import type { NavItem } from '@flu-vax/ui';
+import type { NavItem } from '@event-portal/ui';
 
 export function buildEcpNav(groupCode?: string): NavItem[] {
   if (!groupCode) {

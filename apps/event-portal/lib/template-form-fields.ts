@@ -1,4 +1,4 @@
-import type { FieldType, FormFieldConfigDTO } from '@flu-vax/contracts';
+import type { FieldType, FormFieldConfigDTO } from '@event-portal/contracts';
 import type { EventPortalFieldConfigComponent } from './event-portal-types';
 
 export type TemplateFieldFormValue = {

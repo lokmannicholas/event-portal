@@ -1,4 +1,4 @@
-import { Card, SimpleTable, Stack } from '@flu-vax/ui';
+import { Card, SimpleTable, Stack } from '@event-portal/ui';
 import { EcpShell } from '../../../../components/ecp-shell';
 import { getEcpDocuments } from '../../../../lib/ecp-api';
 

@@ -1,6 +1,6 @@
 # Generated notes
 
-This repository was generated from the flu vaccination portal requirement and the confirmed technical-spec draft.
+This repository was generated from the event portal requirement and the confirmed technical-spec draft.
 
 ## Included
 

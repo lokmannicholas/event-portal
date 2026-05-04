@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { PortalRole } from '@flu-vax/contracts';
+import type { PortalRole } from '@event-portal/contracts';
 import {
   canAccessAdminPortal,
   fetchPortalAuthUser,

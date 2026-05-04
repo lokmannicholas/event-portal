@@ -3,7 +3,7 @@ import './tailadmin-theme.css';
 import type { ReactNode } from 'react';
 
 export const metadata = {
-  title: 'EAP - Flu Vaccination Platform',
+  title: 'EAP - Event Portal',
   description: 'Event Admin Portal',
 };
 

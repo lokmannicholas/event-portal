@@ -1,4 +1,4 @@
-import { Card, EmptyState, KeyValueList, Stack } from '@flu-vax/ui';
+import { Card, EmptyState, KeyValueList, Stack } from '@event-portal/ui';
 import { ActionLink, ActionRow } from '../../../components/admin-forms';
 import { EapShell } from '../../../components/eap-shell';
 import { getNotice } from '../../../lib/api';

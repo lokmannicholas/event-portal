@@ -1,16 +1,16 @@
 services:
   postgres:
     image: postgres:16
-    container_name: flu-vax-postgres
+    container_name: event-portal-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: flu_vax
+      POSTGRES_DB: event_portal
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - flu-vax-postgres:/var/lib/postgresql/data
+      - event-portal-postgres:/var/lib/postgresql/data
 
 volumes:
-  flu-vax-postgres:
+  event-portal-postgres:

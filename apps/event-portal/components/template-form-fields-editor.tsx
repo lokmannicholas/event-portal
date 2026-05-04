@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import { useState } from 'react';
-import type { FieldType, FormFieldConfigDTO } from '@flu-vax/contracts';
+import type { FieldType, FormFieldConfigDTO } from '@event-portal/contracts';
 
 type EditableTemplateField = {
   id: string;

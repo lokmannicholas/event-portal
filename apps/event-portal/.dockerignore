@@ -1,5 +1,11 @@
 node_modules
 .next
+.yarn
+dist
+build
+coverage
 *.tsbuildinfo
 *.log
 .env
+.env.local
+.env.*.local

@@ -1,4 +1,4 @@
-import { Card, InlineNotice, Stack } from '@flu-vax/ui';
+import { Card, InlineNotice, Stack } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { EapLoginForm } from './eap-login-form';
 

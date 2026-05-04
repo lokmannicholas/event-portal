@@ -1,4 +1,4 @@
-import { Card, Stack } from '@flu-vax/ui';
+import { Card, Stack } from '@event-portal/ui';
 import { sendNoticeBatchAction } from '../../actions/notice-actions';
 import { ActionLink, ActionRow, Field, FormGrid, MultiSelectField, NoticeBanner, SelectField, SubmitRow } from '../../../components/admin-forms';
 import { EapShell } from '../../../components/eap-shell';

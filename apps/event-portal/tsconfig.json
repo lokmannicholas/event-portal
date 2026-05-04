@@ -14,8 +14,8 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@flu-vax/contracts": ["lib/contracts/index.ts"],
-      "@flu-vax/ui": ["lib/ui/index.tsx"]
+      "@event-portal/contracts": ["lib/contracts/index.ts"],
+      "@event-portal/ui": ["lib/ui/index.tsx"]
     },
     "incremental": true,
     "plugins": [

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFormState } from 'react-dom';
-import { InlineNotice } from '@flu-vax/ui';
+import { InlineNotice } from '@event-portal/ui';
 import { createInlineClientUserAction, type CreateInlineClientUserState } from '../app/actions/group-user-actions';
 
 type GroupUserOption = {

@@ -1,6 +1,6 @@
-# Flu Vaccination Platform Monorepo
+# Event Portal Repository
 
-This monorepo contains two applications:
+This repository contains two standalone applications:
 
 - `apps/event-portal` — unified Next.js frontend for EAP admin routes, ECP group routes, and ERP public routes
 - `apps/strapi` — Strapi 5 TypeScript backend with schemas, portal APIs, and booking workflow stubs
@@ -13,15 +13,12 @@ It follows the confirmed portal split and scheduling / booking model from the re
 - hold-based quota booking for ERP
 - contact info and document publishing per portal
 
-## Workspace structure
+## Project structure
 
 ```text
 apps/
-  event-portal/  Unified Next.js frontend for admin, client, and public routes
-  strapi/        Strapi 5 CMS / API / workflows
-packages/
-  contracts/ shared DTOs and sample fixtures
-  ui/        shared React UI primitives
+  event-portal/  Standalone Next.js frontend for admin, client, and public routes
+  strapi/        Standalone Strapi 5 CMS / API / workflows
 docs/
   solution-overview.md
   strapi-schema-overview.md
@@ -96,20 +93,21 @@ docker compose up -d postgres
 ### 2) Install dependencies
 
 ```bash
-yarn install
+cd apps/strapi && yarn install
+cd ../event-portal && yarn install
 ```
 
 ### 3) Start Strapi
 
 ```bash
 cp .env.example apps/strapi/.env
-yarn dev:cms
+cd apps/strapi && yarn develop
 ```
 
 ### 4) Start the frontend
 
 ```bash
-yarn dev:event-portal
+cd apps/event-portal && yarn dev
 ```
 
 ## Environment variables

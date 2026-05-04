@@ -1,4 +1,4 @@
-import { Card, EmptyState, KeyValueList, SplitGrid, Stack, StatusBadge } from '@flu-vax/ui';
+import { EmptyState } from '@event-portal/ui';
 import { BookingForm } from '../../../../../components/booking-form';
 import { ErpShell } from '../../../../../components/erp-shell';
 import { getErpEventDetail } from '../../../../../lib/erp-api';
@@ -21,36 +21,41 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <ErpShell
-      title={detail.event.eventName}
-      subtitle="Public event detail with real-time slot availability, temporary hold behavior, and participant registration form."
+      title="預約服務"
+      subtitle={detail.event.eventName}
       partitionCode={partitionCode}
+      headerCaption={detail.event.companyName}
     >
-      <Stack>
-        <SplitGrid
-          left={
-            <Card title="Event detail" description="Published events remain visible according to status, partition, and registration-window rules.">
-              <KeyValueList
-                items={[
-                  { label: 'Event code', value: detail.event.eventCode },
-                  { label: 'Company', value: detail.event.companyName },
-                  { label: 'Location', value: detail.event.location },
-                  { label: 'Description', value: detail.event.description ?? '-' },
-                  { label: 'Event window', value: `${detail.event.eventStartDate} → ${detail.event.eventEndDate}` },
-                  { label: 'Registration window', value: `${detail.event.registrationStartDate} → ${detail.event.registrationEndDate}` },
-                  { label: 'Status', value: <StatusBadge value={detail.event.status} /> },
-                ]}
-              />
-            </Card>
-          }
-          right={
-            <Card title="Event notes" description="This mirrors the free-text notes entered in the event registration form.">
-              <div style={{ lineHeight: 1.7 }}>{detail.event.notes ?? 'No additional notes.'}</div>
-            </Card>
-          }
-        />
+      <div className="erp-event-booking-page">
+        <section className="erp-event-overview-card">
+          <div className="erp-event-overview-copy">
+            <span className="erp-event-overview-kicker">Appointment Booking</span>
+            <h2>{detail.event.eventName}</h2>
+            <p>{detail.event.notes ?? detail.event.description ?? 'Choose the available session and complete the required participant details to secure your booking.'}</p>
+          </div>
+
+          <div className="erp-event-overview-stats">
+            <div className="erp-event-overview-stat">
+              <span>Location</span>
+              <strong>{detail.event.location}</strong>
+            </div>
+            <div className="erp-event-overview-stat">
+              <span>Event Window</span>
+              <strong>
+                {detail.event.eventStartDate} - {detail.event.eventEndDate}
+              </strong>
+            </div>
+            <div className="erp-event-overview-stat">
+              <span>Registration Window</span>
+              <strong>
+                {detail.event.registrationStartDate} - {detail.event.registrationEndDate}
+              </strong>
+            </div>
+          </div>
+        </section>
 
         <BookingForm detail={detail} />
-      </Stack>
+      </div>
     </ErpShell>
   );
 }

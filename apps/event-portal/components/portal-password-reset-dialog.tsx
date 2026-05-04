@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useFormState } from 'react-dom';
-import { InlineNotice } from '@flu-vax/ui';
+import { InlineNotice } from '@event-portal/ui';
 import type { ChangePasswordState } from '../app/actions/portal-account-actions';
 
 const initialState: ChangePasswordState = {

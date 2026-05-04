@@ -1,4 +1,4 @@
-# Flu Vaccination Portal — Updated Technical Specification
+# Event Portal — Updated Technical Specification
 
 **Version:** 1.1  
 **Architecture baseline:** ReactJS + TypeScript frontends, Strapi 5 + TypeScript backend  

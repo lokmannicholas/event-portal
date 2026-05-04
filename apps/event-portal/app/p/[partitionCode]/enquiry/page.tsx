@@ -1,4 +1,4 @@
-import { Card, Stack } from '@flu-vax/ui';
+import { Card, Stack } from '@event-portal/ui';
 import { EnquiryForm } from '../../../../components/enquiry-form';
 import { ErpShell } from '../../../../components/erp-shell';
 

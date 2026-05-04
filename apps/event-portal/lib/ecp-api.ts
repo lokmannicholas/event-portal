@@ -5,7 +5,7 @@ import type {
   EventDetailDTO,
   EventListItemDTO,
   PortalDocumentDTO,
-} from '@flu-vax/contracts';
+} from '@event-portal/contracts';
 import { getServerStrapiRequestToken } from './strapi-request-token';
 import { getStrapiBaseUrl } from './strapi-base-url';
 

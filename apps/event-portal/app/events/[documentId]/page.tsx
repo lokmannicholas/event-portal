@@ -1,4 +1,4 @@
-import { Card, EmptyState, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@flu-vax/ui';
+import { Card, EmptyState, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@event-portal/ui';
 import { changeEventPublicationAction, updateRecordAction } from '../../actions/eap-record-actions';
 import { ActionLink, ActionRow, BooleanButtonField, Field, FormGrid, NoticeBanner, SelectField, SubmitRow, TextAreaField } from '../../../components/admin-forms';
 import { EapShell } from '../../../components/eap-shell';

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InlineNotice, PortalShell } from '@flu-vax/ui';
+import { InlineNotice, PortalShell } from '@event-portal/ui';
 import { changeEapPasswordAction } from '../app/actions/portal-account-actions';
 import { logoutEapAction } from '../app/actions/eap-auth-actions';
 import { requireEapSession } from '../lib/eap-auth';

@@ -2,7 +2,7 @@
 
 This app contains:
 
-- content-type schemas for the flu vaccination platform
+- content-type schemas for the event portal
 - component schemas for form fields and notification templates
 - portal-oriented read endpoints for EAP / ECP / ERP
 - booking workflow stubs for hold, booking, enquiry, and cancellation

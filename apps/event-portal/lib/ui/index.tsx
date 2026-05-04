@@ -35,7 +35,7 @@ export function PortalShell(props: {
   } = props;
   const portalCode = resolvePortalCode(portal);
   const landingHref = findFirstHref(nav) ?? '/';
-  const headerSummary = headerCaption ?? 'Flu Vaccination Platform workspace';
+  const headerSummary = headerCaption ?? 'Event Portal workspace';
   const brandMark = (
     <span className={`portal-brand-mark${brandImageSrc ? ' is-image' : ''}`}>
       {brandImageSrc ? <img src={brandImageSrc} alt={brandImageAlt ?? `${portalCode} logo`} /> : <span className="portal-brand-glyph" aria-hidden="true" />}
@@ -70,6 +70,49 @@ export function PortalShell(props: {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (portalKind === 'registration') {
+    const publicNavItems = flattenNavItems(nav);
+
+    return (
+      <div className="portal-shell portal-shell-registration-public" data-portal-kind={portalKind}>
+        <div className="erp-public-shell">
+          <header className="erp-public-hero">
+            <div className="erp-public-hero-copy">
+              <div className="portal-section-label">ERP Public Portal</div>
+              <h1>{title}</h1>
+              {subtitle ? <p>{subtitle}</p> : null}
+              {publicNavItems.length > 0 ? (
+                <nav className="erp-public-nav" aria-label="Portal navigation">
+                  {publicNavItems.map((item) => (
+                    <Link key={`${item.href}-${item.label}`} href={item.href} className="erp-public-nav-link">
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              ) : null}
+            </div>
+
+            <div className="erp-public-hero-side">
+              <Link href={landingHref} className="erp-public-brand">
+                {brandMark}
+                <span className="erp-public-brand-copy">
+                  <strong>{headerSummary}</strong>
+                  <span>{portal}</span>
+                </span>
+              </Link>
+              {asideNote ? <div className="erp-public-aside-note">{asideNote}</div> : null}
+            </div>
+          </header>
+
+          <main className="erp-public-main">
+            {headerNote ? <div className="erp-public-header-note">{headerNote}</div> : null}
+            {children}
+          </main>
         </div>
       </div>
     );
@@ -305,4 +348,18 @@ function findFirstHref(items: NavItem[]): string | undefined {
   }
 
   return undefined;
+}
+
+function flattenNavItems(items: NavItem[]): Array<{ href: string; label: string }> {
+  return items.flatMap((item) => {
+    if (item.href) {
+      return [{ href: item.href, label: item.label }];
+    }
+
+    if (item.items?.length) {
+      return flattenNavItems(item.items);
+    }
+
+    return [];
+  });
 }

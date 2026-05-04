@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InlineNotice, PortalShell } from '@flu-vax/ui';
+import { InlineNotice, PortalShell } from '@event-portal/ui';
 import { buildErpNav } from '../lib/erp-nav';
 import { getErpLanding } from '../lib/erp-api';
 import { toAbsoluteStrapiMediaUrl } from '../lib/strapi-media';

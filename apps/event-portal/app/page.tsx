@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Card, SimpleTable, Stack, StatGrid, StatusBadge } from '@flu-vax/ui';
+import { Card, SimpleTable, Stack, StatGrid, StatusBadge } from '@event-portal/ui';
 import { EapShell } from '../components/eap-shell';
 import { getAppointments, getDashboard, getEvents } from '../lib/api';
 
