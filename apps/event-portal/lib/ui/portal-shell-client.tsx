@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { NavItem } from './types';
@@ -106,4 +106,37 @@ export function PortalSidebarToggle() {
 
 export function PortalSidebarOverlay() {
   return <button type="button" className="pc-menu-overlay" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />;
+}
+
+export function PortalLanguageSwitcher(props: {
+  queryParamName?: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  ariaLabel: string;
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryParamName = props.queryParamName ?? 'lang';
+
+  return (
+    <div className="portal-language-switcher" role="group" aria-label={props.ariaLabel}>
+      {props.options.map((option) => {
+        const params = new URLSearchParams(searchParams?.toString());
+        params.set(queryParamName, option.value);
+        const href = `${pathname}?${params.toString()}`;
+        const active = option.value === props.value;
+
+        return (
+          <Link
+            key={option.value}
+            href={href}
+            className={`portal-language-switcher-button${active ? ' is-active' : ''}`}
+            aria-current={active ? 'true' : undefined}
+          >
+            {option.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
 }

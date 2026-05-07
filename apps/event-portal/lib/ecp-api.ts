@@ -63,7 +63,7 @@ export async function getEcpAppointmentsForEvent(eventCode: string, groupCode: s
   }
 
   return (await fetchCms<AppointmentDTO[]>(
-    `/api/portal/eap/appointments?eventDocumentId=${encodeURIComponent(detail.event.documentId)}`,
+    `/api/portal/ecp/appointments?groupCode=${encodeURIComponent(groupCode)}&eventDocumentId=${encodeURIComponent(detail.event.documentId)}`,
   )) ?? [];
 }
 

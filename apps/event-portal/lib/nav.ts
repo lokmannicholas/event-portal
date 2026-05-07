@@ -1,35 +1,40 @@
 import type { NavItem } from '@event-portal/ui';
+import { type PortalLanguage, withPortalLanguage } from './portal-language';
 
-export const eapNav: NavItem[] = [
-  { href: '/', label: 'Dashboard / 主頁' },
-  {
-    label: 'Template Management / 模板管理',
-    items: [
-      { href: '/templates', label: 'Template Master / 模板' },
-      { href: '/notice-templates', label: 'Notice Templates / 通知模板' },
-    ],
-  },
-  {
-    label: 'Event Management / 活動管理',
-    items: [
-      { href: '/events', label: 'Registration Master / 活動' },
-      { href: '/appointments', label: 'Appointment Master / 預約' },
-    ],
-  },
-  {
-    label: 'User Management / 用戶管理',
-    items: [
-      { href: '/partitions', label: 'User Partition / 分區' },
-      { href: '/groups', label: 'User Group / 用戶群組' },
-      { href: '/profiles', label: 'Users / 用戶' },
-      { href: '/notices', label: 'Notice History / 通知記錄' },
-    ],
-  },
-  {
-    label: 'Others / 其他',
-    items: [
-      { href: '/content', label: 'Useful Information / 文件' },
-      { href: '/contact', label: 'Contact Us / 聯絡我們' },
-    ],
-  },
-];
+export function buildEapNav(language: PortalLanguage): NavItem[] {
+  const isZh = language === 'zh-Hant';
+
+  return [
+    { href: withPortalLanguage('/', language), label: isZh ? '主頁' : 'Dashboard' },
+    {
+      label: isZh ? '模板管理' : 'Template Management',
+      items: [
+        { href: withPortalLanguage('/templates', language), label: isZh ? '模板' : 'Template Master' },
+        { href: withPortalLanguage('/notice-templates', language), label: isZh ? '通知模板' : 'Notice Templates' },
+      ],
+    },
+    {
+      label: isZh ? '活動管理' : 'Event Management',
+      items: [
+        { href: withPortalLanguage('/events', language), label: isZh ? '活動' : 'Registration Master' },
+        { href: withPortalLanguage('/appointments', language), label: isZh ? '預約' : 'Appointment Master' },
+      ],
+    },
+    {
+      label: isZh ? '用戶管理' : 'User Management',
+      items: [
+        { href: withPortalLanguage('/partitions', language), label: isZh ? '分區' : 'User Partition' },
+        { href: withPortalLanguage('/groups', language), label: isZh ? '用戶群組' : 'User Group' },
+        { href: withPortalLanguage('/profiles', language), label: isZh ? '用戶' : 'Users' },
+        { href: withPortalLanguage('/notices', language), label: isZh ? '通知記錄' : 'Notice History' },
+      ],
+    },
+    {
+      label: isZh ? '其他' : 'Others',
+      items: [
+        { href: withPortalLanguage('/content', language), label: isZh ? '文件' : 'Useful Information' },
+        { href: withPortalLanguage('/contact', language), label: isZh ? '聯絡我們' : 'Contact Us' },
+      ],
+    },
+  ];
+}

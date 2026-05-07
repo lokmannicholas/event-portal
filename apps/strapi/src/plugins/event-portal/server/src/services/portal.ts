@@ -757,6 +757,20 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       .map(mapAppointment);
   },
 
+  async ecpAppointments(groupCode: string, eventDocumentId?: string) {
+    const scope = await fetchEcpScope(strapi, groupCode);
+
+    if (!scope) {
+      return [];
+    }
+
+    const appointments = await fetchAppointmentList(strapi);
+    return appointments
+      .filter((appointment) => appointmentVisibleInEcp(appointment, scope))
+      .filter((appointment) => !eventDocumentId || appointment.event?.documentId === eventDocumentId)
+      .map(mapAppointment);
+  },
+
   async portalDocuments(target: PortalTarget) {
     return fetchPortalDocuments(strapi, target);
   },
@@ -1448,6 +1462,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     actorRole = 'SYSTEM',
     reason?: string,
     cancelToken?: string,
+    groupCode?: string,
   ) {
     const appointment = (await strapi.documents('plugin::event-portal.appointment').findOne({
       documentId,
@@ -1467,6 +1482,14 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     if (cancelToken && appointment.cancelToken && appointment.cancelToken !== cancelToken) {
       throw new Error('Invalid cancellation token');
+    }
+
+    if (actorRole === 'ECP') {
+      const scope = await fetchEcpScope(strapi, groupCode ?? '');
+
+      if (!scope || !matchesPartitionScope(appointment.event?.userPartition?.code, scope.partitionCodes)) {
+        throw new Error('You cannot cancel appointments outside your client group scope.');
+      }
     }
 
     if (getAppointmentStatus(appointment) === 'CANCELLED') {

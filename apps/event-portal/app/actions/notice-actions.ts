@@ -19,6 +19,79 @@ function getRelationValues(formData: FormData, key: string) {
     .filter(Boolean);
 }
 
+export type SendSingleNoticeInput = {
+  eventDocumentId: string;
+  noticeType: 'REGISTRATION' | 'ANNOUNCEMENT' | 'EVENT_UPDATE';
+  appointmentDocumentId: string;
+};
+
+export type SendSingleNoticeResult = {
+  appointmentDocumentId: string;
+  status: 'SENT' | 'FAILED';
+  errorMessage?: string;
+};
+
+export async function sendSingleNoticeAction(input: SendSingleNoticeInput): Promise<SendSingleNoticeResult> {
+  const token = await getServerStrapiRequestToken(true);
+
+  if (!token) {
+    return {
+      appointmentDocumentId: input.appointmentDocumentId,
+      status: 'FAILED',
+      errorMessage: 'Not authenticated for notice sending.',
+    };
+  }
+
+  const response = await fetch(`${getStrapiBaseUrl()}/api/portal/management/notices/send`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      eventDocumentId: input.eventDocumentId,
+      noticeType: input.noticeType,
+      appointmentDocumentIds: [input.appointmentDocumentId],
+      batchSize: 1,
+    }),
+  });
+
+  const parsed = (await response.json().catch(() => undefined)) as
+    | {
+        error?: {
+          message?: string;
+        };
+        sentCount?: number;
+        failedCount?: number;
+      }
+    | undefined;
+
+  revalidatePath('/notices');
+  revalidatePath('/appointments');
+  revalidatePath('/events');
+
+  if (!response.ok) {
+    return {
+      appointmentDocumentId: input.appointmentDocumentId,
+      status: 'FAILED',
+      errorMessage: parsed?.error?.message || 'Failed to send notice.',
+    };
+  }
+
+  if ((parsed?.sentCount ?? 0) > 0 && (parsed?.failedCount ?? 0) === 0) {
+    return {
+      appointmentDocumentId: input.appointmentDocumentId,
+      status: 'SENT',
+    };
+  }
+
+  return {
+    appointmentDocumentId: input.appointmentDocumentId,
+    status: 'FAILED',
+    errorMessage: parsed?.error?.message || 'Notice was not sent successfully.',
+  };
+}
+
 export async function sendNoticeBatchAction(formData: FormData) {
   const token = await getServerStrapiRequestToken(true);
   const sendPath = '/notices/send';

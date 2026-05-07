@@ -1,4 +1,5 @@
 import { Card, EmptyState, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@event-portal/ui';
+import { EcpAppointmentTable } from '../../../../../components/ecp-appointment-table';
 import { EcpShell } from '../../../../../components/ecp-shell';
 import { ErpPathSummary } from '../../../../../components/erp-path-summary';
 import { getEcpAppointmentsForEvent, getEcpEventDetail } from '../../../../../lib/ecp-api';
@@ -98,22 +99,7 @@ export default async function Page({ params }: PageProps) {
         </Card>
 
         <Card title="Appointments" description="HR cancellation remains visible in history and should trigger quota release and participant notification.">
-          <SimpleTable
-            columns={[
-              { key: 'reference', label: 'Reference' },
-              { key: 'participant', label: 'Participant' },
-              { key: 'contact', label: 'Contact' },
-              { key: 'slot', label: 'Date / Slot' },
-              { key: 'status', label: 'Status' },
-            ]}
-            rows={appointments.map((appointment) => ({
-              reference: appointment.bookingReference,
-              participant: appointment.participantName,
-              contact: appointment.registeredEmail ?? appointment.mobileNumber ?? '-',
-              slot: `${appointment.appointmentDate} ${appointment.appointmentStartTime}-${appointment.appointmentEndTime}`,
-              status: <StatusBadge value={appointment.status} />,
-            }))}
-          />
+          <EcpAppointmentTable appointments={appointments} groupCode={groupCode} eventCode={eventCode} />
         </Card>
       </Stack>
     </EcpShell>

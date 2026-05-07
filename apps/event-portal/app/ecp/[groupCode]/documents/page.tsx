@@ -23,11 +23,22 @@ export default async function Page({ params }: PageProps) {
               { key: 'title', label: 'Title' },
               { key: 'file', label: 'File' },
               { key: 'scope', label: 'Partition Scope' },
+              { key: 'download', label: 'Download' },
             ]}
             rows={data.map((item) => ({
               title: item.titleEn,
               file: item.fileName,
               scope: item.partitionCode ?? 'All',
+              download: item.downloadUrl ? (
+                <a
+                  href={`/ecp/${encodeURIComponent(groupCode)}/documents/${encodeURIComponent(item.documentId)}/download`}
+                  className="btn btn-outline-secondary"
+                >
+                  Download
+                </a>
+              ) : (
+                'Unavailable'
+              ),
             }))}
           />
         </Card>

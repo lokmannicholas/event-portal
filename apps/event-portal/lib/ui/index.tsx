@@ -24,7 +24,10 @@ export function PortalShell(props: {
   children?: ReactNode;
   asideNote?: ReactNode;
   headerNote?: ReactNode;
+  headerActions?: ReactNode;
   hideAside?: boolean;
+  publicSectionLabel?: string;
+  publicNavAriaLabel?: string;
 }) {
   const {
     portal,
@@ -38,7 +41,10 @@ export function PortalShell(props: {
     children,
     asideNote,
     headerNote,
+    headerActions,
     hideAside,
+    publicSectionLabel = 'ERP Public Portal',
+    publicNavAriaLabel = 'Portal navigation',
   } = props;
   const portalCode = resolvePortalCode(portal);
   const landingHref = findFirstHref(nav) ?? '/';
@@ -90,11 +96,14 @@ export function PortalShell(props: {
         <div className="erp-public-shell">
           <header className="erp-public-hero">
             <div className="erp-public-hero-copy">
-              <div className="portal-section-label">ERP Public Portal</div>
+              <div className="erp-public-hero-top">
+                <div className="portal-section-label">{publicSectionLabel}</div>
+                {headerActions}
+              </div>
               <h1>{title}</h1>
               {subtitle ? <p>{subtitle}</p> : null}
               {publicNavItems.length > 0 ? (
-                <nav className="erp-public-nav" aria-label="Portal navigation">
+                <nav className="erp-public-nav" aria-label={publicNavAriaLabel}>
                   {publicNavItems.map((item) => (
                     <Link key={`${item.href}-${item.label}`} href={item.href} className="erp-public-nav-link">
                       {item.label}
@@ -156,6 +165,7 @@ export function PortalShell(props: {
             </div>
           </div>
           <div className="portal-header-right">
+            {headerActions}
             {headerNote}
             <div className="portal-header-pill">{portalCode}</div>
           </div>
@@ -228,12 +238,12 @@ export function StatGrid(props: { items: Array<{ label: string; value: string; h
   );
 }
 
-export function StatusBadge(props: { value: string }) {
+export function StatusBadge(props: { value: string; label?: string }) {
   const variant = resolveVariant(props.value);
 
   return (
     <span className="portal-status-badge" data-status-variant={variant}>
-      {props.value}
+      {props.label ?? props.value}
     </span>
   );
 }

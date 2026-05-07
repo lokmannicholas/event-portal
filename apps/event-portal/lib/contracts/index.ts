@@ -170,10 +170,15 @@ export interface EventListItemDTO {
   documentId: string;
   eventCode: string;
   companyName: string;
+  companyNameZh?: string;
   location: string;
+  locationZh?: string;
   eventName: string;
+  eventNameZh?: string;
   description?: string;
+  descriptionZh?: string;
   notes?: string;
+  notesZh?: string;
   partitionCode: string;
   partitionDocumentId?: string;
   templateDocumentId?: string;

@@ -1,6 +1,7 @@
 import type { NavItem } from '@event-portal/ui';
+import { type ErpLanguage, withErpLanguage } from './erp-language';
 
-export function buildErpNav(partitionCode?: string): NavItem[] {
+export function buildErpNav(partitionCode: string | undefined, language: ErpLanguage): NavItem[] {
   if (!partitionCode) {
     return [];
   }
@@ -8,9 +9,9 @@ export function buildErpNav(partitionCode?: string): NavItem[] {
   const base = `/p/${partitionCode}`;
 
   return [
-    { href: base, label: 'Home / 主頁' },
-    { href: `${base}/enquiry`, label: 'Appointment Enquiry / 查詢' },
-    { href: `${base}/documents`, label: 'Useful Information / 文件' },
-    { href: `${base}/contact`, label: 'Contact Us / 聯絡我們' },
+    { href: withErpLanguage(base, language), label: language === 'zh-Hant' ? '主頁' : 'Home' },
+    { href: withErpLanguage(`${base}/enquiry`, language), label: language === 'zh-Hant' ? '預約查詢' : 'Appointment Enquiry' },
+    { href: withErpLanguage(`${base}/documents`, language), label: language === 'zh-Hant' ? '實用資訊' : 'Useful Information' },
+    { href: withErpLanguage(`${base}/contact`, language), label: language === 'zh-Hant' ? '聯絡我們' : 'Contact Us' },
   ];
 }

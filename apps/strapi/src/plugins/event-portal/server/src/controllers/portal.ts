@@ -99,7 +99,12 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const payload = (ctx.request.body as any) ?? {};
     ctx.body = await strapi
       .service('plugin::event-portal.portal')
-      .cancelAppointment(ctx.params.documentId, payload.actorEmail ?? 'admin@local', payload.actorRole ?? 'EAP', payload.reason);
+      .cancelAppointment(
+        ctx.params.documentId,
+        ctx.state.user?.email ?? payload.actorEmail ?? 'admin@local',
+        'EAP',
+        payload.reason,
+      );
   },
 
   async ecpDashboard(ctx: any) {
@@ -112,6 +117,26 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
   async ecpEventDetail(ctx: any) {
     ctx.body = await strapi.service('plugin::event-portal.portal').ecpEventDetail(ctx.params.documentId, String(ctx.query.groupCode ?? ''));
+  },
+
+  async ecpAppointments(ctx: any) {
+    ctx.body = await strapi
+      .service('plugin::event-portal.portal')
+      .ecpAppointments(String(ctx.query.groupCode ?? ''), ctx.query.eventDocumentId as string | undefined);
+  },
+
+  async ecpCancelAppointment(ctx: any) {
+    const payload = (ctx.request.body as any) ?? {};
+    ctx.body = await strapi
+      .service('plugin::event-portal.portal')
+      .cancelAppointment(
+        ctx.params.documentId,
+        ctx.state.user?.email ?? payload.actorEmail ?? 'client@local',
+        'ECP',
+        payload.reason,
+        undefined,
+        String(payload.groupCode ?? ctx.query.groupCode ?? ''),
+      );
   },
 
   async ecpDocuments(ctx: any) {

@@ -1,7 +1,12 @@
 import { eventPortalSdk } from './event-portal-sdk';
-import { decodeSignedSession, encodeSignedSession } from './signed-session';
 import { getStrapiBaseUrl } from './strapi-base-url';
-import type { EventPortalUserGroupEntity, StrapiAuthResponse, StrapiManyRelation, StrapiRelation } from './event-portal-types';
+import type {
+  EventPortalUserGroupEntity,
+  StrapiAuthResponse,
+  StrapiManyRelation,
+  StrapiRelation,
+  UsersPermissionsUserEntity,
+} from './event-portal-types';
 
 export type PortalAuthUser = {
   documentId: string;
@@ -51,30 +56,27 @@ function mapPortalAuthUser(user: {
 }
 
 export async function fetchPortalAuthUser(documentId: string, token?: string): Promise<PortalAuthUser | null> {
-  const loadUser = async (requestToken?: string) => {
-    const response = await eventPortalSdk.users.findOne(
-      documentId,
-      {
-        populate: ['userGroups'],
-      },
-      {
-        cache: 'no-store',
-        revalidate: false,
-        token: requestToken,
-      },
-    );
-
-    return mapPortalAuthUser(response.data);
-  };
-
   try {
-    return await loadUser(token);
-  } catch {
-    try {
-      return await loadUser(undefined);
-    } catch {
+    if (!token) {
       return null;
     }
+
+    const user = await eventPortalSdk.raw.get<UsersPermissionsUserEntity>('/users/me', {
+      query: {
+        populate: ['userGroups', 'role'],
+      },
+      cache: 'no-store',
+      revalidate: false,
+      token,
+    });
+
+    if (documentId && user.documentId && user.documentId !== documentId) {
+      return null;
+    }
+
+    return mapPortalAuthUser(user);
+  } catch {
+    return null;
   }
 }
 

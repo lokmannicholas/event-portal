@@ -2,8 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { EventDetailDTO, FormFieldConfigDTO } from '@event-portal/contracts';
+import type { EventDetailDTO } from '@event-portal/contracts';
 import { createErpBooking, createErpHold } from '../lib/erp-api';
+import {
+  getLocalizedCompanyName,
+  getLocalizedDescription,
+  getLocalizedEventName,
+  getLocalizedFieldLabel,
+  getLocalizedFieldPlaceholder,
+  getLocalizedLocation,
+  getLocalizedNotes,
+  type ErpLanguage,
+  isTraditionalChinese,
+} from '../lib/erp-language';
 
 type SlotOption = {
   documentId: string;
@@ -23,29 +34,88 @@ function formatRemaining(seconds: number) {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
-function formatDisplayDate(date: string) {
+function formatDisplayDate(date: string, language: ErpLanguage) {
   const resolvedDate = new Date(`${date}T00:00:00`);
 
   if (Number.isNaN(resolvedDate.getTime())) {
     return date;
   }
 
-  return resolvedDate.toLocaleDateString('en-GB', {
+  return resolvedDate.toLocaleDateString(language === 'zh-Hant' ? 'zh-HK' : 'en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   });
 }
 
-function resolveFieldLabel(field: FormFieldConfigDTO) {
-  return field.labelZh?.trim() || field.labelEn;
-}
-
-function resolveFieldPlaceholder(field: FormFieldConfigDTO) {
-  return field.placeholderZh?.trim() || field.placeholderEn;
-}
-
-export function BookingForm(props: { detail: EventDetailDTO }) {
+export function BookingForm(props: { detail: EventDetailDTO; language: ErpLanguage }) {
+  const isZh = isTraditionalChinese(props.language);
+  const eventName = getLocalizedEventName(props.detail.event, props.language);
+  const location = getLocalizedLocation(props.detail.event, props.language);
+  const companyName = getLocalizedCompanyName(props.detail.event, props.language);
+  const description = getLocalizedDescription(props.detail.event, props.language);
+  const notes = getLocalizedNotes(props.detail.event, props.language);
+  const copy = {
+    bookingKicker: isZh ? '預約服務' : 'Appointment Booking',
+    bookingTitle: isZh ? '疫苗接種預約登記' : 'Vaccination Booking Registration',
+    bookingDescription: description || (isZh ? '選擇時段、填妥資料，再以三個步驟完成預約確認。' : 'Select a session, complete your details, and confirm the booking in three simple steps.'),
+    eventNameLabel: isZh ? '活動名稱' : 'Event name',
+    locationLabel: isZh ? '地點' : 'Location',
+    companyLabel: isZh ? '服務機構' : 'Provider',
+    registrationWindowLabel: isZh ? '登記日期' : 'Registration window',
+    confirmationTitle: isZh ? '預約已確認' : 'Booking Confirmed',
+    confirmationDescription: isZh ? '請保留以下資料，以便日後查詢或改期時使用。' : 'Keep the details below for future enquiry or rescheduling.',
+    bookingReferenceLabel: isZh ? '預約編號' : 'Booking reference',
+    appointmentLabel: isZh ? '預約時段' : 'Appointment',
+    communicationLabel: isZh ? '通知方式' : 'Communication',
+    bookingDetailsTitle: isZh ? '活動資料' : 'Booking details',
+    registrationDetailsTitle: isZh ? '登記資料' : 'Registration details',
+    progressAriaLabel: isZh ? '預約進度' : 'Booking progress',
+    stepLabel: isZh ? '步驟' : 'Step',
+    step1Title: isZh ? '選擇時段' : 'Select timeslot',
+    step1Helper: isZh ? '選擇預約時段' : 'Select timeslot',
+    step2Title: isZh ? '填寫個人資料' : 'Personal details',
+    step2Helper: isZh ? '填寫登記資料' : 'Complete registration details',
+    step3Title: isZh ? '確認資料' : 'Review details',
+    step3Helper: isZh ? '確認並提交' : 'Review and submit',
+    sectionStep1Title: isZh ? '選擇日期及時段' : 'Choose date and timeslot',
+    sectionStep2Title: isZh ? '填寫登記資料' : 'Complete registration details',
+    sectionStep3Title: isZh ? '確認預約資料' : 'Review booking details',
+    sectionStep1Description: isZh ? '請先選擇一個可用時段，系統會暫時為你保留名額。' : 'Choose one available session to temporarily reserve your booking window.',
+    sectionStep2Description: isZh ? '請按登記表格要求，準確填寫參加者資料。' : 'Enter the participant information exactly as required by the registration template.',
+    sectionStep3Description: isZh ? '提交前請再次核對以下預約資料。' : 'Review the booking details below before final submission.',
+    reservedTimeslotLabel: isZh ? '已保留時段' : 'Reserved timeslot',
+    availableSessions: (count: number) => (isZh ? `可選時段 ${count} 個` : `${count} available session${count === 1 ? '' : 's'}`),
+    quotaLeft: (count: number) => (isZh ? `餘額 ${count}` : `${count} quota left`),
+    unavailable: isZh ? '不可用' : 'Unavailable',
+    selected: isZh ? '已選擇' : 'Selected',
+    choose: isZh ? '選擇' : 'Choose',
+    closed: isZh ? '已關閉' : 'Closed',
+    communicationPreferenceLabel: isZh ? '通知方式' : 'Communication Preference',
+    selectPlaceholder: isZh ? '請選擇' : 'Please select',
+    reviewSummaryTitle: isZh ? '預約摘要' : 'Booking summary',
+    personalDetailsTitle: isZh ? '個人資料' : 'Personal details',
+    selectedSlotLabel: isZh ? '預約時段' : 'Selected timeslot',
+    termsText: isZh
+      ? '每位員工只接受一個有效預約。如需改期，請先取消現有預約，再重新登記。資料不正確可能導致登記失敗。'
+      : 'Only one registration will be accepted for each employee. To reschedule, cancel the existing booking and register again. Inaccurate information may result in an unsuccessful registration.',
+    back: isZh ? '返回' : 'Back',
+    next: isZh ? '下一步' : 'Next',
+    submitting: isZh ? '提交中...' : 'Submitting...',
+    submit: isZh ? '確認提交' : 'Confirm submission',
+    holdExpired: isZh ? '已保留的時段已過期，請重新選擇時段。' : 'The reserved timeslot has expired. Please choose a new timeslot to continue.',
+    holdUntil: (expiresAt: string) =>
+      isZh
+        ? `時段已暫時保留至 ${new Date(expiresAt).toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' })}。`
+        : `Timeslot reserved temporarily until ${new Date(expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.`,
+    holdUnavailable: isZh ? '暫時未能保留此時段，請稍後再試。' : 'Unable to reserve this timeslot right now. Please try again.',
+    pickTimeslotFirst: isZh ? '請先選擇一個可用時段，再繼續。' : 'Please choose an available timeslot before continuing.',
+    selectionInactive: isZh ? '你所選的時段已失效，請重新選擇。' : 'Your timeslot selection is no longer active. Please select it again.',
+    reserveBeforeSubmit: isZh ? '提交前請先保留一個預約時段。' : 'Please reserve a timeslot before submitting.',
+    acceptTerms: isZh ? '提交前請先確認預約條款。' : 'Please acknowledge the booking terms before submitting.',
+    submitSuccess: isZh ? '預約已確認。系統會按所選通知方式發送確認電郵或短訊。' : 'Booking confirmed. A confirmation email or SMS will be sent according to the selected communication preference.',
+    submitFailure: isZh ? '暫時未能提交預約，請稍後再試或聯絡支援。' : 'Unable to submit your booking right now. Please try again or contact support.',
+  };
   const formRef = useRef<HTMLFormElement | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState<SlotOption | null>(null);
@@ -91,21 +161,18 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
         ? '1fr'
         : 'repeat(auto-fit, minmax(220px, 1fr))';
   const detailSummaryItems = [
-    { label: '活動名稱', value: props.detail.event.eventName },
-    { label: '地點', value: props.detail.event.location },
-    { label: '服務機構', value: props.detail.event.companyName },
+    { label: copy.eventNameLabel, value: eventName },
+    { label: copy.locationLabel, value: location },
+    { label: copy.companyLabel, value: companyName },
     {
-      label: '登記日期',
+      label: copy.registrationWindowLabel,
       value: `${props.detail.event.registrationStartDate} - ${props.detail.event.registrationEndDate}`,
     },
   ];
   const reviewFields = registerFields
     .map((field) => ({
-      label: resolveFieldLabel(field),
-      value:
-        field.fieldType === 'CHECKBOX'
-          ? getCheckboxValues(field.fieldKey).join(', ')
-          : getFieldValue(field.fieldKey),
+      label: getLocalizedFieldLabel(field, props.language),
+      value: field.fieldType === 'CHECKBOX' ? getCheckboxValues(field.fieldKey).join(', ') : getFieldValue(field.fieldKey),
     }))
     .filter((item) => item.value);
 
@@ -127,12 +194,12 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
         setExpiresAt('');
         setSelectedSlot(null);
         setCurrentStep(1);
-        setStatus({ tone: 'warning', text: 'The reserved timeslot has expired. Please choose a new timeslot to continue.' });
+        setStatus({ tone: 'warning', text: copy.holdExpired });
       }
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [expiresAt]);
+  }, [copy.holdExpired, expiresAt]);
 
   function getFieldValue(fieldKey: string) {
     return fieldValues[fieldKey] ?? '';
@@ -180,17 +247,14 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
       setCountdown(Math.floor((new Date(hold.expiresAt).getTime() - Date.now()) / 1000));
       setStatus({
         tone: 'info',
-        text: `Timeslot reserved temporarily until ${new Date(hold.expiresAt).toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}.`,
+        text: copy.holdUntil(hold.expiresAt),
       });
     } catch {
       setSelectedSlot(null);
       setHoldToken('');
       setExpiresAt('');
       setCountdown(0);
-      setStatus({ tone: 'danger', text: 'Unable to reserve this timeslot right now. Please try again.' });
+      setStatus({ tone: 'danger', text: copy.holdUnavailable });
     } finally {
       setIsHolding(false);
     }
@@ -198,7 +262,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
   function handleContinueFromSlot() {
     if (!selectedSlot || !holdToken) {
-      setStatus({ tone: 'danger', text: 'Please choose an available timeslot before continuing.' });
+      setStatus({ tone: 'danger', text: copy.pickTimeslotFirst });
       return;
     }
 
@@ -209,7 +273,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
   function handleContinueToReview() {
     if (!selectedSlot || !holdToken) {
       setCurrentStep(1);
-      setStatus({ tone: 'danger', text: 'Your timeslot selection is no longer active. Please select it again.' });
+      setStatus({ tone: 'danger', text: copy.selectionInactive });
       return;
     }
 
@@ -226,12 +290,12 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
     if (!selectedSlot || !holdToken) {
       setCurrentStep(1);
-      setStatus({ tone: 'danger', text: 'Please reserve a timeslot before submitting.' });
+      setStatus({ tone: 'danger', text: copy.reserveBeforeSubmit });
       return;
     }
 
     if (!termsAccepted) {
-      setStatus({ tone: 'danger', text: 'Please acknowledge the booking terms before submitting.' });
+      setStatus({ tone: 'danger', text: copy.acceptTerms });
       return;
     }
 
@@ -261,10 +325,10 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
       setCountdown(0);
       setStatus({
         tone: 'success',
-        text: 'Booking confirmed. A confirmation email or SMS will be sent according to the selected communication preference.',
+        text: copy.submitSuccess,
       });
     } catch {
-      setStatus({ tone: 'danger', text: 'Unable to submit your booking right now. Please try again or contact support.' });
+      setStatus({ tone: 'danger', text: copy.submitFailure });
     } finally {
       setIsSubmitting(false);
     }
@@ -277,23 +341,21 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
         <section className="erp-booking-banner">
           <div className="erp-booking-banner-copy">
-            <span className="erp-booking-kicker">預約服務</span>
-            <h2>預約已確認</h2>
-            <p>請保留以下資料，以便日後查詢或改期時使用。</p>
+            <span className="erp-booking-kicker">{copy.bookingKicker}</span>
+            <h2>{copy.confirmationTitle}</h2>
+            <p>{copy.confirmationDescription}</p>
           </div>
           <div className="erp-booking-summary-grid">
             <div className="erp-booking-summary-card is-highlighted">
-              <span>Booking reference</span>
+              <span>{copy.bookingReferenceLabel}</span>
               <strong>{submittedReference}</strong>
             </div>
             <div className="erp-booking-summary-card">
-              <span>Appointment</span>
-              <strong>
-                {selectedSlot ? `${formatDisplayDate(selectedSlot.date)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : props.detail.event.eventName}
-              </strong>
+              <span>{copy.appointmentLabel}</span>
+              <strong>{selectedSlot ? `${formatDisplayDate(selectedSlot.date, props.language)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : eventName}</strong>
             </div>
             <div className="erp-booking-summary-card">
-              <span>Communication</span>
+              <span>{copy.communicationLabel}</span>
               <strong>{communicationPreference === 'EMAIL' ? 'Email' : 'SMS'}</strong>
             </div>
           </div>
@@ -309,25 +371,25 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
           <div className="erp-booking-review-grid">
             <div className="erp-booking-review-card">
-              <h3>活動資料</h3>
+              <h3>{copy.bookingDetailsTitle}</h3>
               <dl>
                 <div>
-                  <dt>活動名稱</dt>
-                  <dd>{props.detail.event.eventName}</dd>
+                  <dt>{copy.eventNameLabel}</dt>
+                  <dd>{eventName}</dd>
                 </div>
                 <div>
-                  <dt>地點</dt>
-                  <dd>{props.detail.event.location}</dd>
+                  <dt>{copy.locationLabel}</dt>
+                  <dd>{location}</dd>
                 </div>
                 <div>
-                  <dt>已預留時段</dt>
-                  <dd>{selectedSlot ? `${formatDisplayDate(selectedSlot.date)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : '-'}</dd>
+                  <dt>{copy.selectedSlotLabel}</dt>
+                  <dd>{selectedSlot ? `${formatDisplayDate(selectedSlot.date, props.language)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : '-'}</dd>
                 </div>
               </dl>
             </div>
 
             <div className="erp-booking-review-card">
-              <h3>登記資料</h3>
+              <h3>{copy.registrationDetailsTitle}</h3>
               <dl>
                 {reviewFields.map((field) => (
                   <div key={field.label}>
@@ -349,9 +411,9 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
       <section className="erp-booking-banner">
         <div className="erp-booking-banner-copy">
-          <span className="erp-booking-kicker">預約服務</span>
-          <h2>疫苗接種預約登記</h2>
-          <p>{props.detail.event.description ?? 'Select a session, complete your details, and confirm the booking in three simple steps.'}</p>
+          <span className="erp-booking-kicker">{copy.bookingKicker}</span>
+          <h2>{copy.bookingTitle}</h2>
+          <p>{copy.bookingDescription}</p>
         </div>
         <div className="erp-booking-summary-grid">
           {detailSummaryItems.map((item) => (
@@ -363,11 +425,11 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
         </div>
       </section>
 
-      <div className="erp-booking-stepper" aria-label="Booking progress">
+      <div className="erp-booking-stepper" aria-label={copy.progressAriaLabel}>
         {[
-          { index: 1, label: '選擇時段', helper: 'Select timeslot' },
-          { index: 2, label: '填寫個人資料', helper: 'Personal details' },
-          { index: 3, label: '確認資料', helper: 'Review & submit' },
+          { index: 1, label: copy.step1Title, helper: copy.step1Helper },
+          { index: 2, label: copy.step2Title, helper: copy.step2Helper },
+          { index: 3, label: copy.step3Title, helper: copy.step3Helper },
         ].map((step) => {
           const state = currentStep === step.index ? 'active' : currentStep > step.index ? 'completed' : 'pending';
 
@@ -386,28 +448,30 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
       <section className="erp-booking-shell">
         <div className="erp-booking-shell-heading">
           <div>
-            <span className="erp-booking-shell-kicker">Step {currentStep}</span>
+            <span className="erp-booking-shell-kicker">
+              {copy.stepLabel} {currentStep}
+            </span>
             <h3>
               {currentStep === 1
-                ? '選擇日期及時段'
+                ? copy.sectionStep1Title
                 : currentStep === 2
-                  ? '填寫登記資料'
-                  : '確認預約資料'}
+                  ? copy.sectionStep2Title
+                  : copy.sectionStep3Title}
             </h3>
             <p>
               {currentStep === 1
-                ? 'Choose one available session to temporarily reserve your booking window.'
+                ? copy.sectionStep1Description
                 : currentStep === 2
-                  ? 'Enter the participant information exactly as required by the registration template.'
-                  : 'Review the booking details below before final submission.'}
+                  ? copy.sectionStep2Description
+                  : copy.sectionStep3Description}
             </p>
           </div>
           {holdToken && selectedSlot ? (
             <div className="erp-booking-timer-card">
-              <span>Reserved timeslot</span>
+              <span>{copy.reservedTimeslotLabel}</span>
               <strong>{formatRemaining(countdown)}</strong>
               <small>
-                {formatDisplayDate(selectedSlot.date)} {selectedSlot.startTime}-{selectedSlot.endTime}
+                {formatDisplayDate(selectedSlot.date, props.language)} {selectedSlot.startTime}-{selectedSlot.endTime}
               </small>
             </div>
           ) : null}
@@ -427,11 +491,8 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                 <section key={group.date} className="erp-booking-slot-group">
                   <div className="erp-booking-slot-group-header">
                     <div>
-                      <h4>{formatDisplayDate(group.date)}</h4>
-                      <span>
-                        {group.slots.filter((slot) => slot.enabled).length} available session
-                        {group.slots.filter((slot) => slot.enabled).length === 1 ? '' : 's'}
-                      </span>
+                      <h4>{formatDisplayDate(group.date, props.language)}</h4>
+                      <span>{copy.availableSessions(group.slots.filter((slot) => slot.enabled).length)}</span>
                     </div>
                   </div>
                   <div className="erp-booking-slot-grid">
@@ -450,8 +511,8 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                             {slot.startTime} - {slot.endTime}
                           </div>
                           <div className="erp-booking-slot-meta">
-                            <span>{slot.enabled ? `${slot.remaining} quota left` : 'Unavailable'}</span>
-                            <strong>{isSelected ? 'Selected' : slot.enabled ? 'Choose' : 'Closed'}</strong>
+                            <span>{slot.enabled ? copy.quotaLeft(slot.remaining) : copy.unavailable}</span>
+                            <strong>{isSelected ? copy.selected : slot.enabled ? copy.choose : copy.closed}</strong>
                           </div>
                         </button>
                       );
@@ -468,7 +529,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                 {registerFields.map((field) => (
                   <div key={field.fieldKey} className="erp-booking-field">
                     <div className="erp-booking-field-label">
-                      {resolveFieldLabel(field)}
+                      {getLocalizedFieldLabel(field, props.language)}
                       {field.required ? <span>*</span> : null}
                     </div>
 
@@ -477,7 +538,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                         value={getFieldValue(field.fieldKey)}
                         onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
                         required={field.required}
-                        placeholder={resolveFieldPlaceholder(field)}
+                        placeholder={getLocalizedFieldPlaceholder(field, props.language)}
                         rows={4}
                       />
                     ) : field.fieldType === 'CHECKBOX' ? (
@@ -505,7 +566,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                             checked={getFieldValue(field.fieldKey) === 'true'}
                             onChange={(event) => setFieldValue(field.fieldKey, event.target.checked ? 'true' : '')}
                           />
-                          <span>{resolveFieldLabel(field)}</span>
+                          <span>{getLocalizedFieldLabel(field, props.language)}</span>
                         </label>
                       )
                     ) : field.fieldType === 'RADIO' ? (
@@ -526,7 +587,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                       </div>
                     ) : field.fieldType === 'SELECT' ? (
                       <select value={getFieldValue(field.fieldKey)} onChange={(event) => setFieldValue(field.fieldKey, event.target.value)} required={field.required}>
-                        <option value="">Please select</option>
+                        <option value="">{copy.selectPlaceholder}</option>
                         {(field.options ?? []).map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -549,7 +610,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                         value={getFieldValue(field.fieldKey)}
                         onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
                         required={field.required}
-                        placeholder={resolveFieldPlaceholder(field)}
+                        placeholder={getLocalizedFieldPlaceholder(field, props.language)}
                       />
                     )}
                   </div>
@@ -557,7 +618,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
                 <div className="erp-booking-field">
                   <div className="erp-booking-field-label">
-                    Communication Preference
+                    {copy.communicationPreferenceLabel}
                     <span>*</span>
                   </div>
                   <select value={communicationPreference} onChange={(event) => setCommunicationPreference(event.target.value as 'EMAIL' | 'SMS')}>
@@ -572,29 +633,29 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
           {currentStep === 3 ? (
             <div className="erp-booking-review-grid">
               <div className="erp-booking-review-card">
-                <h4>預約摘要</h4>
+                <h4>{copy.reviewSummaryTitle}</h4>
                 <dl>
                   <div>
-                    <dt>活動名稱</dt>
-                    <dd>{props.detail.event.eventName}</dd>
+                    <dt>{copy.eventNameLabel}</dt>
+                    <dd>{eventName}</dd>
                   </div>
                   <div>
-                    <dt>地點</dt>
-                    <dd>{props.detail.event.location}</dd>
+                    <dt>{copy.locationLabel}</dt>
+                    <dd>{location}</dd>
                   </div>
                   <div>
-                    <dt>預約時段</dt>
-                    <dd>{selectedSlot ? `${formatDisplayDate(selectedSlot.date)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : '-'}</dd>
+                    <dt>{copy.selectedSlotLabel}</dt>
+                    <dd>{selectedSlot ? `${formatDisplayDate(selectedSlot.date, props.language)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : '-'}</dd>
                   </div>
                   <div>
-                    <dt>通知方式</dt>
+                    <dt>{copy.communicationLabel}</dt>
                     <dd>{communicationPreference === 'EMAIL' ? 'Email' : 'SMS'}</dd>
                   </div>
                 </dl>
               </div>
 
               <div className="erp-booking-review-card">
-                <h4>個人資料</h4>
+                <h4>{copy.personalDetailsTitle}</h4>
                 <dl>
                   {reviewFields.map((field) => (
                     <div key={field.label}>
@@ -607,10 +668,7 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
 
               <label className="erp-booking-terms">
                 <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-                <span>
-                  Only one registration will be accepted for each employee. To reschedule, cancel the existing booking and register again. Any
-                  inaccurate information may result in an unsuccessful registration.
-                </span>
+                <span>{copy.termsText}</span>
               </label>
             </div>
           ) : null}
@@ -628,24 +686,24 @@ export function BookingForm(props: { detail: EventDetailDTO }) {
                 setCurrentStep((step) => Math.max(step - 1, 1));
               }}
             >
-              返回
+              {copy.back}
             </button>
 
             {currentStep === 1 ? (
               <button type="button" className="erp-booking-button is-primary" onClick={handleContinueFromSlot}>
-                下一步
+                {copy.next}
               </button>
             ) : null}
 
             {currentStep === 2 ? (
               <button type="button" className="erp-booking-button is-primary" onClick={handleContinueToReview}>
-                下一步
+                {copy.next}
               </button>
             ) : null}
 
             {currentStep === 3 ? (
               <button type="submit" disabled={isSubmitting} className="erp-booking-button is-primary">
-                {isSubmitting ? 'Submitting...' : '確認提交'}
+                {isSubmitting ? copy.submitting : copy.submit}
               </button>
             ) : null}
           </div>
