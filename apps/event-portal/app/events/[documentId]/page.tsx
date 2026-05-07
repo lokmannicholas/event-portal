@@ -25,6 +25,14 @@ function formatOptionalBoolean(value: boolean | undefined) {
   return '-';
 }
 
+function getNotificationTemplate(
+  notifications: Array<{ type: string; channel?: string; templateDocumentId?: string }>,
+  type: string,
+  channel: 'EMAIL' | 'SMS',
+) {
+  return notifications.find((notification) => notification.type === type && notification.channel === channel);
+}
+
 export default async function Page({ params, searchParams }: PageProps) {
   const [{ documentId }, query] = await Promise.all([params, searchParams]);
   const [detail, partitionRows, templateRows, noticeTemplateRows] = await Promise.all([
@@ -49,10 +57,24 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   const { event } = detail;
   const defaultQuota = event.dates.flatMap((date) => date.slots)[0]?.quota ?? 10;
-  const registrationNotice = event.notifications.find((notification) => notification.type === 'REGISTRATION');
-  const announcementNotice = event.notifications.find((notification) => notification.type === 'ANNOUNCEMENT');
-  const eventUpdateNotice = event.notifications.find((notification) => notification.type === 'EVENT_UPDATE');
-  const noticeTemplateOptions = [{ value: '', label: 'Not linked' }, ...noticeTemplateRows.map((item) => ({ value: item.documentId, label: `${item.name} · ${item.channel}` }))];
+  const smsRegistrationNotice = getNotificationTemplate(event.notifications, 'REGISTRATION', 'SMS');
+  const smsAnnouncementNotice = getNotificationTemplate(event.notifications, 'ANNOUNCEMENT', 'SMS');
+  const smsEventUpdateNotice = getNotificationTemplate(event.notifications, 'EVENT_UPDATE', 'SMS');
+  const emailRegistrationNotice = getNotificationTemplate(event.notifications, 'REGISTRATION', 'EMAIL');
+  const emailAnnouncementNotice = getNotificationTemplate(event.notifications, 'ANNOUNCEMENT', 'EMAIL');
+  const emailEventUpdateNotice = getNotificationTemplate(event.notifications, 'EVENT_UPDATE', 'EMAIL');
+  const smsNoticeTemplateOptions = [
+    { value: '', label: 'Not linked' },
+    ...noticeTemplateRows
+      .filter((item) => item.channel === 'SMS')
+      .map((item) => ({ value: item.documentId, label: item.name })),
+  ];
+  const emailNoticeTemplateOptions = [
+    { value: '', label: 'Not linked' },
+    ...noticeTemplateRows
+      .filter((item) => item.channel === 'EMAIL')
+      .map((item) => ({ value: item.documentId, label: item.name })),
+  ];
 
   return (
     <EapShell title={event.eventName} subtitle="Update registration event metadata, publishable windows, and operational notes from the detail page.">
@@ -123,22 +145,40 @@ export default async function Page({ params, searchParams }: PageProps) {
                   <TextAreaField label="Event notes" name="notes" defaultValue={event.notes} rows={3} />
                   <FormGrid>
                     <SelectField
-                      label="Registration notice template"
-                      name="registrationNoticeTemplateDocumentId"
-                      defaultValue={registrationNotice?.templateDocumentId ?? ''}
-                      options={noticeTemplateOptions}
+                      label="SMS Registration notice template"
+                      name="smsRegistrationNoticeTemplateDocumentId"
+                      defaultValue={smsRegistrationNotice?.templateDocumentId ?? ''}
+                      options={smsNoticeTemplateOptions}
                     />
                     <SelectField
-                      label="Announcement notice template"
-                      name="announcementNoticeTemplateDocumentId"
-                      defaultValue={announcementNotice?.templateDocumentId ?? ''}
-                      options={noticeTemplateOptions}
+                      label="SMS Announcement notice template"
+                      name="smsAnnouncementNoticeTemplateDocumentId"
+                      defaultValue={smsAnnouncementNotice?.templateDocumentId ?? ''}
+                      options={smsNoticeTemplateOptions}
                     />
                     <SelectField
-                      label="Event update notice template"
-                      name="eventUpdateNoticeTemplateDocumentId"
-                      defaultValue={eventUpdateNotice?.templateDocumentId ?? ''}
-                      options={noticeTemplateOptions}
+                      label="SMS Event update notice template"
+                      name="smsEventUpdateNoticeTemplateDocumentId"
+                      defaultValue={smsEventUpdateNotice?.templateDocumentId ?? ''}
+                      options={smsNoticeTemplateOptions}
+                    />
+                    <SelectField
+                      label="EMAIL Registration notice template"
+                      name="emailRegistrationNoticeTemplateDocumentId"
+                      defaultValue={emailRegistrationNotice?.templateDocumentId ?? ''}
+                      options={emailNoticeTemplateOptions}
+                    />
+                    <SelectField
+                      label="EMAIL Announcement notice template"
+                      name="emailAnnouncementNoticeTemplateDocumentId"
+                      defaultValue={emailAnnouncementNotice?.templateDocumentId ?? ''}
+                      options={emailNoticeTemplateOptions}
+                    />
+                    <SelectField
+                      label="EMAIL Event update notice template"
+                      name="emailEventUpdateNoticeTemplateDocumentId"
+                      defaultValue={emailEventUpdateNotice?.templateDocumentId ?? ''}
+                      options={emailNoticeTemplateOptions}
                     />
                   </FormGrid>
                   <EventSlotPlanner initialDates={event.dates} defaultQuota={defaultQuota} defaultDurationMinutes={30} />
@@ -214,7 +254,7 @@ export default async function Page({ params, searchParams }: PageProps) {
           />
         </Card>
 
-        <Card title="Notice template mapping" description="Each event notice type resolves to a linked reusable notice template.">
+        <Card title="Notice template mapping" description="Each event notice type resolves independently for SMS and email delivery.">
           <SimpleTable
             columns={[
               { key: 'type', label: 'Type' },

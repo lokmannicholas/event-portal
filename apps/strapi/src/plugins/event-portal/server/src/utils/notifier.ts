@@ -10,9 +10,17 @@ export async function sendNotification(
     htmlBody?: string;
   },
 ) {
-  strapi.log.info(
-    `[notify:${input.channel}] to=${input.to} subject=${input.subject ?? '(none)'} html=${input.htmlBody ? 'yes' : 'no'}`,
-  );
-  // TODO: integrate real email / SMS providers
-  return input;
+  if (input.channel === 'EMAIL') {
+    return strapi.plugin('sendgrid-email').service('mailer').sendEmail({
+      to: input.to,
+      subject: input.subject,
+      body: input.body,
+      htmlBody: input.htmlBody,
+    });
+  }
+
+  return strapi.plugin('sms-sender').service('sender').sendSms({
+    to: input.to,
+    body: input.body,
+  });
 }

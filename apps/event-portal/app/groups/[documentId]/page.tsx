@@ -60,7 +60,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         <SplitGrid
           left={
             <Card title="Group detail" description="Update the record directly from this page.">
-              <form action={updateRecordAction.bind(null, 'group', record.documentId)} encType="multipart/form-data">
+              <form action={updateRecordAction.bind(null, 'group', record.documentId)}>
                 <Stack gap={16}>
                   <FormGrid>
                     <Field label="Group code" name="code" defaultValue={record.code} required />

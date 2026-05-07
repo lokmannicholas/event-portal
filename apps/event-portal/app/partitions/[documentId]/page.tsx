@@ -55,7 +55,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         <SplitGrid
           left={
             <Card title="Partition detail" description="Changes here update the partition record directly.">
-              <form action={updateRecordAction.bind(null, 'partition', record.documentId)} encType="multipart/form-data">
+              <form action={updateRecordAction.bind(null, 'partition', record.documentId)}>
                 <Stack gap={16}>
                   <FormGrid>
                     <Field label="Partition code" name="code" defaultValue={record.code} required />

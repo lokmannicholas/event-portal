@@ -1,14 +1,17 @@
-import { Card, SimpleTable, Stack } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack } from '@event-portal/ui';
 import { EcpShell } from '../../../../components/ecp-shell';
 import { getEcpContacts } from '../../../../lib/ecp-api';
+import { paginateItems } from '../../../../lib/pagination';
 
 type PageProps = {
   params: Promise<{ groupCode: string }>;
+  searchParams?: Promise<{ page?: string }>;
 };
 
-export default async function Page({ params }: PageProps) {
-  const { groupCode } = await params;
+export default async function Page({ params, searchParams }: PageProps) {
+  const [{ groupCode }, query] = await Promise.all([params, searchParams]);
   const data = await getEcpContacts(groupCode);
+  const pagination = paginateItems(data, query ?? {});
 
   return (
     <EcpShell
@@ -25,12 +28,18 @@ export default async function Page({ params }: PageProps) {
               { key: 'phone', label: 'Phone' },
               { key: 'address', label: 'Address' },
             ]}
-            rows={data.map((item) => ({
+            rows={pagination.items.map((item) => ({
               title: item.titleEn,
               email: item.email ?? '-',
               phone: item.phone ?? '-',
               address: item.addressEn ?? '-',
             }))}
+          />
+          <PaginationControls
+            basePath={`/ecp/${groupCode}/contact`}
+            searchParams={query ?? {}}
+            pagination={pagination}
+            itemLabel="contacts"
           />
         </Card>
       </Stack>

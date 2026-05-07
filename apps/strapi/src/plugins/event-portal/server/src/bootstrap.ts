@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { validateEventNoticeTemplateAssignments } from './utils/event-notice-templates';
 
 async function seedDefaultMandatoryFields(strapi: Core.Strapi) {
   const existing = await strapi.documents('plugin::event-portal.mandatory-field').findMany({
@@ -68,11 +69,21 @@ async function seedDefaultMandatoryFields(strapi: Core.Strapi) {
 
   for (const field of defaults) {
     await strapi.documents('plugin::event-portal.mandatory-field').create({
-      data: field,
+      data: field as any,
     });
   }
 }
 
 export async function bootstrap({ strapi }: { strapi: Core.Strapi }) {
   await seedDefaultMandatoryFields(strapi);
+
+  strapi.db.lifecycles.subscribe({
+    models: ['plugin::event-portal.event'],
+    async beforeCreate(event) {
+      await validateEventNoticeTemplateAssignments(strapi, event.params.data as Record<string, unknown> | undefined);
+    },
+    async beforeUpdate(event) {
+      await validateEventNoticeTemplateAssignments(strapi, event.params.data as Record<string, unknown> | undefined);
+    },
+  });
 }

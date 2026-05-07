@@ -1,11 +1,18 @@
 import { ActionLink, ActionRow } from '../../components/admin-forms';
-import { Card, KeyValueList, SimpleTable, SplitGrid, Stack, StatusBadge } from '@event-portal/ui';
+import { Card, KeyValueList, PaginationControls, SimpleTable, SplitGrid, Stack, StatusBadge } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { getNoticeTemplates } from '../../lib/api';
+import { paginateItems } from '../../lib/pagination';
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const query = (await searchParams) ?? {};
   const templates = await getNoticeTemplates();
-  const primaryTemplate = templates[0];
+  const pagination = paginateItems(templates, query);
+  const primaryTemplate = pagination.items[0];
 
   return (
     <EapShell
@@ -27,13 +34,14 @@ export default async function Page() {
                   { key: 'active', label: 'Active' },
                   { key: 'detail', label: 'Detail' },
                 ]}
-                rows={templates.map((template) => ({
+                rows={pagination.items.map((template) => ({
                   name: <a href={`/notice-templates/${template.documentId}`}>{template.name}</a>,
                   channel: template.channel,
                   active: <StatusBadge value={template.active ? 'ACTIVE' : 'DISABLED'} />,
                   detail: <a href={`/notice-templates/${template.documentId}`}>Open record</a>,
                 }))}
               />
+              <PaginationControls basePath="/notice-templates" searchParams={query} pagination={pagination} itemLabel="templates" />
             </Card>
           }
           right={

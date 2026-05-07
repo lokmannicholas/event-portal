@@ -1,10 +1,17 @@
 import { ActionLink, ActionRow } from '../../components/admin-forms';
-import { Card, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { getPartitions } from '../../lib/api';
+import { paginateItems } from '../../lib/pagination';
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const query = (await searchParams) ?? {};
   const data = await getPartitions();
+  const pagination = paginateItems(data, query);
 
   return (
     <EapShell
@@ -26,7 +33,7 @@ export default async function Page() {
               { key: 'status', label: 'Status' },
               { key: 'detail', label: 'Detail' },
             ]}
-            rows={data.map((item) => ({
+            rows={pagination.items.map((item) => ({
               code: <a href={`/partitions/${item.documentId}`}>{item.code}</a>,
               description: item.description,
               erpPath: <a href={`/p/${item.code}`}>{`/p/${item.code}`}</a>,
@@ -35,6 +42,7 @@ export default async function Page() {
               detail: <a href={`/partitions/${item.documentId}`}>Open record</a>,
             }))}
           />
+          <PaginationControls basePath="/partitions" searchParams={query} pagination={pagination} itemLabel="partitions" />
         </Card>
       </Stack>
     </EapShell>

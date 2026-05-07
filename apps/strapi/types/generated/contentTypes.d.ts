@@ -729,10 +729,6 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
-    announcementNoticeTemplate: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::event-portal.notice-template'
-    >;
     appointments: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.appointment'
@@ -748,6 +744,18 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     dayEndTime: Schema.Attribute.Time & Schema.Attribute.Required;
     dayStartTime: Schema.Attribute.Time & Schema.Attribute.Required;
+    emailAnnouncementNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
+    emailEventUpdateNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
+    emailRegistrationNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
     eventDescription: Schema.Attribute.Text;
     eventDescriptionZh: Schema.Attribute.Text;
     eventEndDate: Schema.Attribute.Date & Schema.Attribute.Required;
@@ -760,10 +768,6 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
       ['DRAFT', 'RELEASED', 'DISABLED', 'CLOSED']
     > &
       Schema.Attribute.DefaultTo<'DRAFT'>;
-    eventUpdateNoticeTemplate: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::event-portal.notice-template'
-    >;
     holds: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.appointment-hold'
@@ -782,10 +786,6 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
     publishedToPortals: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
     registrationEndDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    registrationNoticeTemplate: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::event-portal.notice-template'
-    >;
     registrationStartDate: Schema.Attribute.Date & Schema.Attribute.Required;
     releasedAt: Schema.Attribute.DateTime;
     reminderOffsetDays: Schema.Attribute.Integer &
@@ -798,6 +798,18 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
     slots: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.event-slot'
+    >;
+    smsAnnouncementNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
+    smsEventUpdateNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
+    >;
+    smsRegistrationNoticeTemplate: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.notice-template'
     >;
     template: Schema.Attribute.Relation<
       'manyToOne',

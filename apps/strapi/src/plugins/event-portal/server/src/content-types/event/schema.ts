@@ -109,17 +109,32 @@ export default {
     "publicBaseUrl": {
       "type": "string"
     },
-    "registrationNoticeTemplate": {
+    "smsRegistrationNoticeTemplate": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::event-portal.notice-template"
     },
-    "announcementNoticeTemplate": {
+    "smsAnnouncementNoticeTemplate": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::event-portal.notice-template"
     },
-    "eventUpdateNoticeTemplate": {
+    "smsEventUpdateNoticeTemplate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.notice-template"
+    },
+    "emailRegistrationNoticeTemplate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.notice-template"
+    },
+    "emailAnnouncementNoticeTemplate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.notice-template"
+    },
+    "emailEventUpdateNoticeTemplate": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::event-portal.notice-template"

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { InlineNotice } from '@event-portal/ui';
 import { createInlineClientUserAction, type CreateInlineClientUserState } from '../app/actions/group-user-actions';
 
@@ -30,9 +30,14 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
   const [selectedValues, setSelectedValues] = useState<string[]>(props.defaultValue ?? []);
   const [allOptions, setAllOptions] = useState<GroupUserOption[]>(props.options);
   const [query, setQuery] = useState('');
+  const [isDialogMounted, setIsDialogMounted] = useState(false);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const createFormRef = useRef<HTMLFormElement | null>(null);
-  const [createState, createAction] = useFormState(createInlineClientUserAction, initialCreateState);
+  const [createState, createAction] = useActionState(createInlineClientUserAction, initialCreateState);
+
+  useEffect(() => {
+    setIsDialogMounted(true);
+  }, []);
 
   useEffect(() => {
     setAllOptions(props.options);
@@ -182,57 +187,61 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
       {selectedValues.map((value) => (
         <input key={value} type="hidden" name={props.name} value={value} />
       ))}
+      {isDialogMounted
+        ? createPortal(
+            <dialog ref={dialogRef} className="portal-dialog">
+              <form ref={createFormRef} action={createAction} className="portal-dialog-form">
+                <div className="portal-dialog-header">
+                  <div>
+                    <strong>Create Client User</strong>
+                    <p>This creates a `CLIENT_HR` user. Save the group form to link the new user to this group.</p>
+                  </div>
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => dialogRef.current?.close()}>
+                    Close
+                  </button>
+                </div>
 
-      <dialog ref={dialogRef} className="portal-dialog">
-        <form ref={createFormRef} action={createAction} className="portal-dialog-form">
-          <div className="portal-dialog-header">
-            <div>
-              <strong>Create Client User</strong>
-              <p>This creates a `CLIENT_HR` user. Save the group form to link the new user to this group.</p>
-            </div>
-            <button type="button" className="btn btn-outline-secondary" onClick={() => dialogRef.current?.close()}>
-              Close
-            </button>
-          </div>
+                {createState.status === 'error' && createState.message ? <InlineNotice title="Create user">{createState.message}</InlineNotice> : null}
 
-          {createState.status === 'error' && createState.message ? <InlineNotice title="Create user">{createState.message}</InlineNotice> : null}
+                <div className="portal-dialog-grid">
+                  <label className="portal-field">
+                    <span className="portal-field-label">Username</span>
+                    <input name="username" autoComplete="username" required />
+                  </label>
+                  <label className="portal-field">
+                    <span className="portal-field-label">Email</span>
+                    <input name="email" type="email" autoComplete="email" required />
+                  </label>
+                  <label className="portal-field">
+                    <span className="portal-field-label">Password</span>
+                    <input name="password" type="password" autoComplete="new-password" />
+                  </label>
+                  <label className="portal-field">
+                    <span className="portal-field-label">Status</span>
+                    <select name="status" defaultValue="ACTIVE">
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="DISABLED">DISABLED</option>
+                    </select>
+                  </label>
+                  <label className="portal-field">
+                    <span className="portal-field-label">Confirmed</span>
+                    <select name="confirmed" defaultValue="true">
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </label>
+                </div>
 
-          <div className="portal-dialog-grid">
-            <label className="portal-field">
-              <span className="portal-field-label">Username</span>
-              <input name="username" required />
-            </label>
-            <label className="portal-field">
-              <span className="portal-field-label">Email</span>
-              <input name="email" type="email" required />
-            </label>
-            <label className="portal-field">
-              <span className="portal-field-label">Password</span>
-              <input name="password" type="password" />
-            </label>
-            <label className="portal-field">
-              <span className="portal-field-label">Status</span>
-              <select name="status" defaultValue="ACTIVE">
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="DISABLED">DISABLED</option>
-              </select>
-            </label>
-            <label className="portal-field">
-              <span className="portal-field-label">Confirmed</span>
-              <select name="confirmed" defaultValue="true">
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="portal-dialog-actions">
-            <button type="submit" className="btn btn-primary">
-              Create user
-            </button>
-          </div>
-        </form>
-      </dialog>
+                <div className="portal-dialog-actions">
+                  <button type="submit" className="btn btn-primary">
+                    Create user
+                  </button>
+                </div>
+              </form>
+            </dialog>,
+            document.body,
+          )
+        : null}
     </label>
   );
 }

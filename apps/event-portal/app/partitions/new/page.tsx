@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: PageProps) {
         <NoticeBanner code={query.notice} title={query.title} description={query.message} />
 
         <Card title="Partition setup" description="Assign this partition to one owning user group.">
-          <form action={createRecordAction.bind(null, 'partition')} encType="multipart/form-data">
+          <form action={createRecordAction.bind(null, 'partition')}>
             <Stack gap={16}>
               <FormGrid>
                 <Field label="Partition code" name="code" required />

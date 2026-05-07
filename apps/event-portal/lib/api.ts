@@ -42,7 +42,7 @@ function getOptionalBoolean(value: unknown) {
   return typeof value === 'boolean' ? value : undefined;
 }
 
-function mapNotificationTemplate(type: NotificationType, noticeTemplate: AnyRecord | null | undefined) {
+function mapNotificationTemplate(type: NotificationType, channel: 'EMAIL' | 'SMS', noticeTemplate: AnyRecord | null | undefined) {
   if (!noticeTemplate) {
     return undefined;
   }
@@ -51,7 +51,7 @@ function mapNotificationTemplate(type: NotificationType, noticeTemplate: AnyReco
     type,
     templateDocumentId: noticeTemplate.documentId,
     templateName: noticeTemplate.name,
-    channel: noticeTemplate.channel,
+    channel,
     subject: noticeTemplate.subject,
     enabled: true,
   };
@@ -312,9 +312,12 @@ function mapEventListItem(record: AnyRecord): EventListItemDTO {
 
 function mapEventDetail(record: AnyRecord): EventDetailDTO {
   const notifications = [
-    mapNotificationTemplate('REGISTRATION', record.registrationNoticeTemplate),
-    mapNotificationTemplate('ANNOUNCEMENT', record.announcementNoticeTemplate),
-    mapNotificationTemplate('EVENT_UPDATE', record.eventUpdateNoticeTemplate),
+    mapNotificationTemplate('REGISTRATION', 'SMS', record.smsRegistrationNoticeTemplate),
+    mapNotificationTemplate('ANNOUNCEMENT', 'SMS', record.smsAnnouncementNoticeTemplate),
+    mapNotificationTemplate('EVENT_UPDATE', 'SMS', record.smsEventUpdateNoticeTemplate),
+    mapNotificationTemplate('REGISTRATION', 'EMAIL', record.emailRegistrationNoticeTemplate),
+    mapNotificationTemplate('ANNOUNCEMENT', 'EMAIL', record.emailAnnouncementNoticeTemplate),
+    mapNotificationTemplate('EVENT_UPDATE', 'EMAIL', record.emailEventUpdateNoticeTemplate),
   ].filter((value): value is NonNullable<typeof value> => Boolean(value));
 
   return {
@@ -597,9 +600,12 @@ export async function getEvent(documentId: string): Promise<EventDetailDTO | und
             formFields: true,
           },
         },
-        registrationNoticeTemplate: true,
-        announcementNoticeTemplate: true,
-        eventUpdateNoticeTemplate: true,
+        smsRegistrationNoticeTemplate: true,
+        smsAnnouncementNoticeTemplate: true,
+        smsEventUpdateNoticeTemplate: true,
+        emailRegistrationNoticeTemplate: true,
+        emailAnnouncementNoticeTemplate: true,
+        emailEventUpdateNoticeTemplate: true,
         slots: true,
       },
     });

@@ -45,7 +45,7 @@ export default async function Page({ params, searchParams }: PageProps) {
                   <FormGrid>
                     <Field label="Username" name="username" defaultValue={record.username} required />
                     <Field label="Email" name="email" type="email" defaultValue={record.email} required />
-                    <Field label="New password" name="password" type="password" />
+                    <Field label="New password" name="password" type="password" autoComplete="new-password" />
                     <SelectField
                       label="Portal role"
                       name="portalRole"

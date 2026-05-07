@@ -21,7 +21,7 @@ export default async function Page({ searchParams }: PageProps) {
         </ActionRow>
         <NoticeBanner code={query.notice} title={query.title} description={query.message} />
 
-        <Card title="Batch notice send" description="Choose an event and notice type. The linked template is resolved from the event configuration, then either select appointments explicitly or leave the appointment list empty to target all appointments in the selected event.">
+        <Card title="Batch notice send" description="Choose an event and notice type. The linked SMS or email template is resolved from the event configuration using each participant's communication preference, then either select appointments explicitly or leave the appointment list empty to target all appointments in the selected event.">
           <form action={sendNoticeBatchAction}>
             <Stack gap={16}>
               <FormGrid>

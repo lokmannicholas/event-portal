@@ -1,9 +1,16 @@
-import { Card, SimpleTable, Stack } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack } from '@event-portal/ui';
 import { EcpShell } from '../../components/ecp-shell';
 import { getGroups } from '../../lib/api';
+import { paginateItems } from '../../lib/pagination';
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const query = (await searchParams) ?? {};
   const groups = await getGroups();
+  const pagination = paginateItems(groups, query);
 
   return (
     <EcpShell
@@ -19,13 +26,14 @@ export default async function Page() {
               { key: 'partitions', label: 'Partitions' },
               { key: 'path', label: 'Portal Path' },
             ]}
-            rows={groups.map((group) => ({
+            rows={pagination.items.map((group) => ({
               groupCode: group.code,
               description: group.description,
               partitions: group.partitionCodes.join(', '),
               path: <a href={`/ecp/${group.code}`}>{`/ecp/${group.code}`}</a>,
             }))}
           />
+          <PaginationControls basePath="/ecp" searchParams={query} pagination={pagination} itemLabel="groups" />
         </Card>
       </Stack>
     </EcpShell>

@@ -34,9 +34,12 @@ export type EventCreateDraft = {
   reminderOffsetDays?: string;
   description?: string;
   notes?: string;
-  registrationNoticeTemplateDocumentId?: string;
-  announcementNoticeTemplateDocumentId?: string;
-  eventUpdateNoticeTemplateDocumentId?: string;
+  smsRegistrationNoticeTemplateDocumentId?: string;
+  smsAnnouncementNoticeTemplateDocumentId?: string;
+  smsEventUpdateNoticeTemplateDocumentId?: string;
+  emailRegistrationNoticeTemplateDocumentId?: string;
+  emailAnnouncementNoticeTemplateDocumentId?: string;
+  emailEventUpdateNoticeTemplateDocumentId?: string;
   slotPlanJson?: string;
 };
 

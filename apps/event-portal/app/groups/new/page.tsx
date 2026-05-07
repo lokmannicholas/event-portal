@@ -33,7 +33,7 @@ export default async function Page({ searchParams }: PageProps) {
         <NoticeBanner code={query.notice} title={query.title} description={query.message} />
 
         <Card title="Group setup" description="Select the partitions this client group owns and can access. Each partition can belong to only one group.">
-          <form action={createRecordAction.bind(null, 'group')} encType="multipart/form-data">
+          <form action={createRecordAction.bind(null, 'group')}>
             <Stack gap={16}>
               <FormGrid>
                 <Field label="Group code" name="code" required />

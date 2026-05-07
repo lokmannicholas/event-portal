@@ -41,6 +41,7 @@ export function Field(props: {
   type?: string;
   placeholder?: string;
   required?: boolean;
+  autoComplete?: string;
 }) {
   return (
     <label className="portal-field">
@@ -51,6 +52,7 @@ export function Field(props: {
         defaultValue={props.defaultValue}
         placeholder={props.placeholder}
         required={props.required}
+        autoComplete={props.autoComplete}
       />
     </label>
   );

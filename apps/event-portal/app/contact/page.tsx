@@ -1,8 +1,9 @@
-import { Card, SimpleTable, Stack } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack } from '@event-portal/ui';
 import { ActionLink, ActionRow, NoticeBanner } from '../../components/admin-forms';
 import { EapShell } from '../../components/eap-shell';
 import { getContacts } from '../../lib/api';
 import type { NoticeQuery } from '../../lib/eap-records';
+import { paginateItems } from '../../lib/pagination';
 
 type PageProps = {
   searchParams?: Promise<NoticeQuery>;
@@ -11,6 +12,7 @@ type PageProps = {
 export default async function Page({ searchParams }: PageProps) {
   const query = (await searchParams) ?? {};
   const data = await getContacts();
+  const pagination = paginateItems(data, query);
 
   return (
     <EapShell
@@ -31,7 +33,7 @@ export default async function Page({ searchParams }: PageProps) {
               { key: 'targets', label: 'Portal Targets' },
               { key: 'detail', label: 'Detail' },
             ]}
-            rows={data.map((item) => ({
+            rows={pagination.items.map((item) => ({
               title: item.titleEn,
               email: item.email ?? '-',
               phone: item.phone ?? '-',
@@ -39,6 +41,7 @@ export default async function Page({ searchParams }: PageProps) {
               detail: <a href={`/contact/${item.documentId}`}>Open record</a>,
             }))}
           />
+          <PaginationControls basePath="/contact" searchParams={query} pagination={pagination} itemLabel="contacts" />
         </Card>
       </Stack>
     </EapShell>

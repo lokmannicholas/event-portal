@@ -4,6 +4,7 @@ export type NoticeQuery = {
   notice?: string;
   title?: string;
   message?: string;
+  page?: string;
 };
 
 export const eapRecordConfig: Record<

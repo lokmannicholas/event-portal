@@ -1,10 +1,17 @@
 import { ActionLink, ActionRow } from '../../components/admin-forms';
-import { Card, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { getGroups } from '../../lib/api';
+import { paginateItems } from '../../lib/pagination';
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const query = (await searchParams) ?? {};
   const data = await getGroups();
+  const pagination = paginateItems(data, query);
 
   return (
     <EapShell
@@ -27,7 +34,7 @@ export default async function Page() {
               { key: 'status', label: 'Status' },
               { key: 'detail', label: 'Detail' },
             ]}
-            rows={data.map((group) => ({
+            rows={pagination.items.map((group) => ({
               code: <a href={`/groups/${group.documentId}`}>{group.code}</a>,
               description: group.description,
               ecpPath: <a href={`/ecp/${group.code}`}>{`/ecp/${group.code}`}</a>,
@@ -37,6 +44,7 @@ export default async function Page() {
               detail: <a href={`/groups/${group.documentId}`}>Open record</a>,
             }))}
           />
+          <PaginationControls basePath="/groups" searchParams={query} pagination={pagination} itemLabel="groups" />
         </Card>
       </Stack>
     </EapShell>

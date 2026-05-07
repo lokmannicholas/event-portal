@@ -34,7 +34,7 @@ function getPublicAppBaseUrl(record: AnyRecord) {
   return 'http://localhost:3002';
 }
 
-function mapNotificationTemplate(type: string, noticeTemplate: AnyRecord | null | undefined) {
+function mapNotificationTemplate(type: string, channel: 'EMAIL' | 'SMS', noticeTemplate: AnyRecord | null | undefined) {
   if (!noticeTemplate) {
     return undefined;
   }
@@ -43,7 +43,7 @@ function mapNotificationTemplate(type: string, noticeTemplate: AnyRecord | null 
     type,
     templateDocumentId: noticeTemplate.documentId,
     templateName: noticeTemplate.name,
-    channel: noticeTemplate.channel,
+    channel,
     subject: noticeTemplate.subject,
     enabled: true,
   };
@@ -232,9 +232,12 @@ export function mapEventListItem(record: AnyRecord) {
 
 export function mapEventDetail(record: AnyRecord) {
   const notifications = [
-    mapNotificationTemplate('REGISTRATION', record.registrationNoticeTemplate),
-    mapNotificationTemplate('ANNOUNCEMENT', record.announcementNoticeTemplate),
-    mapNotificationTemplate('EVENT_UPDATE', record.eventUpdateNoticeTemplate),
+    mapNotificationTemplate('REGISTRATION', 'SMS', record.smsRegistrationNoticeTemplate),
+    mapNotificationTemplate('ANNOUNCEMENT', 'SMS', record.smsAnnouncementNoticeTemplate),
+    mapNotificationTemplate('EVENT_UPDATE', 'SMS', record.smsEventUpdateNoticeTemplate),
+    mapNotificationTemplate('REGISTRATION', 'EMAIL', record.emailRegistrationNoticeTemplate),
+    mapNotificationTemplate('ANNOUNCEMENT', 'EMAIL', record.emailAnnouncementNoticeTemplate),
+    mapNotificationTemplate('EVENT_UPDATE', 'EMAIL', record.emailEventUpdateNoticeTemplate),
   ].filter((value): value is NonNullable<typeof value> => Boolean(value));
 
   return {

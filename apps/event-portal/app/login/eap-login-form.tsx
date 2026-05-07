@@ -99,11 +99,11 @@ export function EapLoginForm({ initialMessage }: Props) {
     <form onSubmit={handleSubmit} className="portal-form-stack portal-form-stack-compact">
       <label className="portal-field">
         <div className="portal-field-label">Email or username</div>
-        <input type="text" name="identifier" placeholder="admin@company.com" required disabled={pending} />
+        <input type="text" name="identifier" placeholder="admin@company.com" autoComplete="username" required disabled={pending} />
       </label>
       <label className="portal-field">
         <div className="portal-field-label">Password</div>
-        <input type="password" name="password" placeholder="••••••••" required disabled={pending} />
+        <input type="password" name="password" placeholder="••••••••" autoComplete="current-password" required disabled={pending} />
       </label>
       {message ? <div className="portal-form-message">{message}</div> : null}
       <button type="submit" disabled={pending} className="btn btn-primary">

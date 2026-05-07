@@ -1,10 +1,17 @@
 import { ActionLink, ActionRow } from '../../components/admin-forms';
-import { Card, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { getUserAccounts } from '../../lib/api';
+import { paginateItems } from '../../lib/pagination';
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const query = (await searchParams) ?? {};
   const data = await getUserAccounts();
+  const pagination = paginateItems(data, query);
 
   return (
     <EapShell
@@ -28,7 +35,7 @@ export default async function Page() {
               { key: 'login', label: 'Last Login' },
               { key: 'detail', label: 'Detail' },
             ]}
-            rows={data.map((user) => ({
+            rows={pagination.items.map((user) => ({
               username: user.username,
               email: user.email,
               confirmed: user.confirmed === false ? 'No' : 'Yes',
@@ -39,6 +46,7 @@ export default async function Page() {
               detail: <a href={`/profiles/${user.documentId}`}>Open record</a>,
             }))}
           />
+          <PaginationControls basePath="/profiles" searchParams={query} pagination={pagination} itemLabel="users" />
         </Card>
       </Stack>
     </EapShell>

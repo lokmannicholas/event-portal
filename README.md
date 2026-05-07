@@ -77,7 +77,6 @@ Implemented as a solid scaffold:
 Still needs project-specific integration work before go-live:
 
 - real authentication / authorization policies
-- provider-backed email and SMS delivery
 - Excel report binary export
 - full admin CRUD forms and validation rules
 - transaction-safe locking strategy for high-concurrency booking
@@ -120,6 +119,18 @@ Important variables:
 - `NEXT_PUBLIC_STRAPI_URL`
 - `STRAPI_API_TOKEN`
 - `STRAPI_READ_TOKEN`
+- `SENDGRID_ENABLED`
+- `SENDGRID_API_KEY`
+- `SENDGRID_FROM_EMAIL`
+- `SENDGRID_FROM_NAME`
+- `SENDGRID_REPLY_TO_EMAIL`
+- `SENDGRID_REPLY_TO_NAME`
+- `SMS_SENDER_ENABLED`
+- `SMS_SENDER_URL`
+- `SMS_SENDER_API_KEY`
+- `SMS_SENDER_API_SECRET`
+
+SendGrid email defaults and SMS sender defaults can be overridden from the Strapi admin settings UI.
 
 ## Notes
 

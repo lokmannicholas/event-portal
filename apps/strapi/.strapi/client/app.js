@@ -4,11 +4,15 @@
  */
 import documentation from "@strapi/plugin-documentation/strapi-admin";
 import usersPermissions from "@strapi/plugin-users-permissions/strapi-admin";
+import sendgridEmail from "../../src/plugins/sendgrid-email/./admin/src/index.js";
+import smsSender from "../../src/plugins/sms-sender/./admin/src/index.js";
 import { renderAdmin } from "@strapi/strapi/admin";
 
 renderAdmin(document.getElementById("strapi"), {
   plugins: {
     documentation: documentation,
     "users-permissions": usersPermissions,
+    "sendgrid-email": sendgridEmail,
+    "sms-sender": smsSender,
   },
 });

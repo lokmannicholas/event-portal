@@ -1,8 +1,9 @@
 import { ActionLink, ActionRow } from '../../components/admin-forms';
-import { Card, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
+import { Card, PaginationControls, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import { duplicateEventAction } from '../actions/eap-record-actions';
 import { EapShell } from '../../components/eap-shell';
 import { getEvents } from '../../lib/api';
+import { paginateItems } from '../../lib/pagination';
 
 function CopyIcon() {
   return (
@@ -15,8 +16,14 @@ function CopyIcon() {
   );
 }
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const query = (await searchParams) ?? {};
   const data = await getEvents();
+  const pagination = paginateItems(data, query);
 
   return (
     <EapShell
@@ -41,7 +48,7 @@ export default async function Page() {
               { key: 'detail', label: 'Detail' },
               { key: 'copy', label: 'Copy' },
             ]}
-            rows={data.map((event) => ({
+            rows={pagination.items.map((event) => ({
               event: (
                 <div>
                   <div style={{ fontWeight: 700 }}>
@@ -72,6 +79,7 @@ export default async function Page() {
               ),
             }))}
           />
+          <PaginationControls basePath="/events" searchParams={query} pagination={pagination} itemLabel="events" />
         </Card>
       </Stack>
     </EapShell>

@@ -6,6 +6,16 @@ declare module 'react' {
   export function useEffect(effect: () => void | (() => void), deps?: unknown[]): void;
   export function useMemo<T>(factory: () => T, deps: unknown[]): T;
   export function useRef<T>(initialValue: T): { current: T };
+  export function useActionState<State>(
+    action: (state: Awaited<State>) => State | Promise<State>,
+    initialState: Awaited<State>,
+    permalink?: string,
+  ): [state: Awaited<State>, dispatch: () => void, isPending: boolean];
+  export function useActionState<State, Payload>(
+    action: (state: Awaited<State>, payload: Payload) => State | Promise<State>,
+    initialState: Awaited<State>,
+    permalink?: string,
+  ): [state: Awaited<State>, dispatch: (payload: Payload) => void, isPending: boolean];
 }
 
 declare namespace JSX {

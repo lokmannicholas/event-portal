@@ -1,14 +1,17 @@
-import { Card, EmptyState, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
+import { Card, EmptyState, PaginationControls, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import { EcpShell } from '../../../../components/ecp-shell';
 import { getEcpEvents } from '../../../../lib/ecp-api';
+import { paginateItems } from '../../../../lib/pagination';
 
 type PageProps = {
   params: Promise<{ groupCode: string }>;
+  searchParams?: Promise<{ page?: string }>;
 };
 
-export default async function Page({ params }: PageProps) {
-  const { groupCode } = await params;
+export default async function Page({ params, searchParams }: PageProps) {
+  const [{ groupCode }, query] = await Promise.all([params, searchParams]);
   const data = await getEcpEvents(groupCode);
+  const pagination = paginateItems(data, query ?? {});
 
   return (
     <EcpShell
@@ -29,13 +32,19 @@ export default async function Page({ params }: PageProps) {
                 { key: 'status', label: 'Status' },
                 { key: 'detail', label: 'Detail' },
               ]}
-              rows={data.map((event) => ({
+              rows={pagination.items.map((event) => ({
                 event: event.eventName,
                 partition: event.partitionCode,
                 eventWindow: `${event.eventStartDate} → ${event.eventEndDate}`,
                 status: <StatusBadge value={event.status} />,
                 detail: <a href={`/ecp/${groupCode}/events/${event.eventCode}`}>View event</a>,
               }))}
+            />
+            <PaginationControls
+              basePath={`/ecp/${groupCode}/events`}
+              searchParams={query ?? {}}
+              pagination={pagination}
+              itemLabel="events"
             />
           </Card>
         )}

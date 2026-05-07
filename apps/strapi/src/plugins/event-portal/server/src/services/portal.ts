@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Core } from '@strapi/strapi';
 import { buildAppointmentIdentityHash, createBookingReference, createCancelToken, createHoldToken } from '../utils/booking';
 import { deriveEventStatus } from '../utils/event-status';
+import { type EventNoticeChannel, type EventNoticeType, resolveEventNoticeTemplate } from '../utils/event-notice-templates';
 import { mapAppointment, mapContact, mapDocument, mapEventDetail, mapEventListItem, mapGroup, mapPartition, mapTemplate, mapUser } from '../utils/mappers';
 import { sendNotification } from '../utils/notifier';
 import { calculateRemaining } from '../utils/slot-capacity';
@@ -28,7 +29,7 @@ type ManagementEventSlotInput = {
 type SendNoticesInput = {
   noticeTemplateDocumentId?: string;
   eventDocumentId?: string;
-  noticeType?: 'REGISTRATION' | 'ANNOUNCEMENT' | 'EVENT_UPDATE';
+  noticeType?: EventNoticeType;
   appointmentDocumentIds?: string[];
   batchSize?: number;
   actorEmail?: string;
@@ -190,6 +191,18 @@ async function createAndSendNotice(
     } as any,
   });
 
+  if (template.active === false) {
+    await strapi.documents('plugin::event-portal.notice').update({
+      documentId: notice.documentId,
+      data: {
+        noticeStatus: 'FAILED',
+        errorMessage: 'Notice template is inactive.',
+      } as any,
+    });
+
+    return { status: 'FAILED' as const, documentId: notice.documentId };
+  }
+
   if (!recipient) {
     await strapi.documents('plugin::event-portal.notice').update({
       documentId: notice.documentId,
@@ -234,24 +247,23 @@ async function createAndSendNotice(
   }
 }
 
-function resolveEventNoticeTemplate(event: AnyRecord | null, noticeType: string | undefined) {
-  if (!event || !noticeType) {
-    return undefined;
+function getAppointmentNotificationChannel(appointment: AnyRecord): EventNoticeChannel {
+  return appointment.communicationPreference === 'SMS' ? 'SMS' : 'EMAIL';
+}
+
+async function createAndSendNoticeForPreference(
+  strapi: Core.Strapi,
+  appointment: AnyRecord,
+  noticeType: EventNoticeType,
+) {
+  const channel = getAppointmentNotificationChannel(appointment);
+  const template = resolveEventNoticeTemplate(appointment.event, noticeType, channel);
+
+  if (!template) {
+    return { status: 'FAILED' as const, documentId: undefined };
   }
 
-  if (noticeType === 'REGISTRATION') {
-    return event.registrationNoticeTemplate;
-  }
-
-  if (noticeType === 'ANNOUNCEMENT') {
-    return event.announcementNoticeTemplate;
-  }
-
-  if (noticeType === 'EVENT_UPDATE') {
-    return event.eventUpdateNoticeTemplate;
-  }
-
-  return undefined;
+  return createAndSendNotice(strapi, template, appointment);
 }
 
 function eventReleasedToPortals(event: AnyRecord) {
@@ -413,7 +425,7 @@ async function createAuditLog(
       action: input.action,
       actorEmail: input.actorEmail,
       actorRole: input.actorRole,
-      details: input.details ?? {},
+      details: (input.details ?? {}) as any,
       appointment: input.appointmentDocumentId ? input.appointmentDocumentId : undefined,
       event: input.eventDocumentId ? input.eventDocumentId : undefined,
     },
@@ -441,9 +453,12 @@ async function fetchEventDetailRecord(strapi: Core.Strapi, documentId: string) {
           formFields: true,
         },
       },
-      registrationNoticeTemplate: true,
-      announcementNoticeTemplate: true,
-      eventUpdateNoticeTemplate: true,
+      smsRegistrationNoticeTemplate: true,
+      smsAnnouncementNoticeTemplate: true,
+      smsEventUpdateNoticeTemplate: true,
+      emailRegistrationNoticeTemplate: true,
+      emailAnnouncementNoticeTemplate: true,
+      emailEventUpdateNoticeTemplate: true,
     },
   })) as AnyRecord | null;
 }
@@ -467,9 +482,12 @@ async function fetchEventDetailRecordByIdentifier(strapi: Core.Strapi, identifie
           formFields: true,
         },
       },
-      registrationNoticeTemplate: true,
-      announcementNoticeTemplate: true,
-      eventUpdateNoticeTemplate: true,
+      smsRegistrationNoticeTemplate: true,
+      smsAnnouncementNoticeTemplate: true,
+      smsEventUpdateNoticeTemplate: true,
+      emailRegistrationNoticeTemplate: true,
+      emailAnnouncementNoticeTemplate: true,
+      emailEventUpdateNoticeTemplate: true,
     },
     limit: 1,
   })) as AnyRecord[];
@@ -483,6 +501,12 @@ async function fetchAppointmentList(strapi: Core.Strapi) {
       event: {
         populate: {
           userPartition: true,
+          smsRegistrationNoticeTemplate: true,
+          smsAnnouncementNoticeTemplate: true,
+          smsEventUpdateNoticeTemplate: true,
+          emailRegistrationNoticeTemplate: true,
+          emailAnnouncementNoticeTemplate: true,
+          emailEventUpdateNoticeTemplate: true,
         },
       },
       eventSlot: true,
@@ -1068,31 +1092,25 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       },
     });
 
-    const destination =
-      input.communicationPreference === 'SMS'
-        ? mobileNumber
-        : registeredEmail;
-
-    if (destination) {
-      await sendNotification(strapi, {
-        channel: input.communicationPreference,
-        to: destination,
-        subject: 'Vaccination booking confirmed',
-        body: `Your booking reference is ${created.bookingReference}.`,
-      });
-    }
-
     const hydrated = (await strapi.documents('plugin::event-portal.appointment').findOne({
       documentId: created.documentId,
       populate: {
         event: {
           populate: {
             userPartition: true,
+            smsRegistrationNoticeTemplate: true,
+            smsAnnouncementNoticeTemplate: true,
+            smsEventUpdateNoticeTemplate: true,
+            emailRegistrationNoticeTemplate: true,
+            emailAnnouncementNoticeTemplate: true,
+            emailEventUpdateNoticeTemplate: true,
           },
         },
         eventSlot: true,
       },
     })) as AnyRecord;
+
+    await createAndSendNoticeForPreference(strapi, hydrated, 'REGISTRATION');
 
     return mapAppointment(hydrated);
   },
@@ -1208,28 +1226,27 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async sendNotices(input: SendNoticesInput) {
     const templateDocumentId = String(input.noticeTemplateDocumentId ?? '').trim();
     const eventDocumentId = String(input.eventDocumentId ?? '').trim();
-    const noticeType = String(input.noticeType ?? '').trim();
+    const noticeType = String(input.noticeType ?? '').trim() as EventNoticeType | '';
     const selectedAppointmentIds = Array.isArray(input.appointmentDocumentIds)
       ? input.appointmentDocumentIds.map((value) => String(value).trim()).filter(Boolean)
       : [];
     const batchSize = Math.max(1, Math.min(Number(input.batchSize ?? 50) || 50, 200));
-    const event = eventDocumentId ? await fetchEventDetailRecord(strapi, eventDocumentId) : null;
-    const resolvedTemplateDocumentId = templateDocumentId || String(resolveEventNoticeTemplate(event, noticeType)?.documentId ?? '').trim();
+    let template: AnyRecord | null = null;
 
-    if (!resolvedTemplateDocumentId) {
-      throw new Error('The selected event notice type is not linked to a notice template.');
-    }
+    if (templateDocumentId) {
+      template = await strapi.documents('plugin::event-portal.notice-template').findOne({
+        documentId: templateDocumentId,
+      }) as AnyRecord | null;
 
-    const template = await strapi.documents('plugin::event-portal.notice-template').findOne({
-      documentId: resolvedTemplateDocumentId,
-    }) as AnyRecord | null;
+      if (!template) {
+        throw new Error('Notice template not found.');
+      }
 
-    if (!template) {
-      throw new Error('Notice template not found.');
-    }
-
-    if (template.active === false) {
-      throw new Error('Notice template is inactive.');
+      if (template.active === false) {
+        throw new Error('Notice template is inactive.');
+      }
+    } else if (!noticeType) {
+      throw new Error('Notice type is required when no explicit notice template is provided.');
     }
 
     const appointments = await fetchAppointmentList(strapi);
@@ -1249,15 +1266,25 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       throw new Error('No appointments matched the selected send scope.');
     }
 
+    const resolvedNoticeType = noticeType || undefined;
     let sentCount = 0;
     let failedCount = 0;
     const noticeDocumentIds: string[] = [];
 
     for (const chunk of chunkArray(recipients, batchSize)) {
-      const results = await Promise.all(chunk.map((appointment) => createAndSendNotice(strapi, template, appointment)));
+      const results = await Promise.all(chunk.map(async (appointment) => {
+        if (template) {
+          return createAndSendNotice(strapi, template, appointment);
+        }
+
+        return createAndSendNoticeForPreference(strapi, appointment, resolvedNoticeType as EventNoticeType);
+      }));
 
       for (const result of results) {
-        noticeDocumentIds.push(result.documentId);
+        if (result.documentId) {
+          noticeDocumentIds.push(result.documentId);
+        }
+
         if (result.status === 'SENT') {
           sentCount += 1;
         } else {
@@ -1268,14 +1295,14 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     await createAuditLog(strapi, {
       entityType: 'notice-batch',
-      entityDocumentId: resolvedTemplateDocumentId,
+      entityDocumentId: templateDocumentId || undefined,
       eventDocumentId: eventDocumentId || undefined,
       action: 'NOTICE_BATCH_SENT',
       actorEmail: input.actorEmail,
       actorRole: 'EAP',
       details: {
-        templateDocumentId: resolvedTemplateDocumentId,
-        noticeType: noticeType || undefined,
+        templateDocumentId: templateDocumentId || undefined,
+        noticeType: resolvedNoticeType,
         batchSize,
         recipientCount: recipients.length,
         sentCount,
@@ -1286,9 +1313,9 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     return {
       accepted: true,
-      templateDocumentId: resolvedTemplateDocumentId,
+      templateDocumentId: templateDocumentId || undefined,
       eventDocumentId: eventDocumentId || undefined,
-      noticeType: noticeType || undefined,
+      noticeType: resolvedNoticeType,
       recipientCount: recipients.length,
       sentCount,
       failedCount,

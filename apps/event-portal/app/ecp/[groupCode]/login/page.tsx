@@ -45,11 +45,11 @@ export default async function Page({ params, searchParams }: PageProps) {
             <input type="hidden" name="groupCode" value={groupCode} />
             <label className="portal-field">
               <div className="portal-field-label">Email or username</div>
-              <input type="text" name="identifier" placeholder="hr.user@company.com" required />
+              <input type="text" name="identifier" placeholder="hr.user@company.com" autoComplete="username" required />
             </label>
             <label className="portal-field">
               <div className="portal-field-label">Password</div>
-              <input type="password" name="password" placeholder="••••••••" required />
+              <input type="password" name="password" placeholder="••••••••" autoComplete="current-password" required />
             </label>
             <button type="submit" className="btn btn-primary">
               Sign in

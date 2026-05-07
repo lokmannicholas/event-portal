@@ -183,9 +183,12 @@ function buildCreateDraft(kind: EapCreateDraftKind, formData: FormData) {
         reminderOffsetDays: getOptionalValue(formData, 'reminderOffsetDays'),
         description: getOptionalValue(formData, 'description'),
         notes: getOptionalValue(formData, 'notes'),
-        registrationNoticeTemplateDocumentId: getOptionalValue(formData, 'registrationNoticeTemplateDocumentId'),
-        announcementNoticeTemplateDocumentId: getOptionalValue(formData, 'announcementNoticeTemplateDocumentId'),
-        eventUpdateNoticeTemplateDocumentId: getOptionalValue(formData, 'eventUpdateNoticeTemplateDocumentId'),
+        smsRegistrationNoticeTemplateDocumentId: getOptionalValue(formData, 'smsRegistrationNoticeTemplateDocumentId'),
+        smsAnnouncementNoticeTemplateDocumentId: getOptionalValue(formData, 'smsAnnouncementNoticeTemplateDocumentId'),
+        smsEventUpdateNoticeTemplateDocumentId: getOptionalValue(formData, 'smsEventUpdateNoticeTemplateDocumentId'),
+        emailRegistrationNoticeTemplateDocumentId: getOptionalValue(formData, 'emailRegistrationNoticeTemplateDocumentId'),
+        emailAnnouncementNoticeTemplateDocumentId: getOptionalValue(formData, 'emailAnnouncementNoticeTemplateDocumentId'),
+        emailEventUpdateNoticeTemplateDocumentId: getOptionalValue(formData, 'emailEventUpdateNoticeTemplateDocumentId'),
         slotPlanJson: getOptionalValue(formData, 'slotPlanJson'),
       };
     case 'template':
@@ -605,9 +608,12 @@ async function getTemplateRecord(documentId?: string) {
 
 function buildEventNoticeTemplateRelations(formData: FormData) {
   return {
-    registrationNoticeTemplate: getOptionalValue(formData, 'registrationNoticeTemplateDocumentId'),
-    announcementNoticeTemplate: getOptionalValue(formData, 'announcementNoticeTemplateDocumentId'),
-    eventUpdateNoticeTemplate: getOptionalValue(formData, 'eventUpdateNoticeTemplateDocumentId'),
+    smsRegistrationNoticeTemplate: getOptionalValue(formData, 'smsRegistrationNoticeTemplateDocumentId'),
+    smsAnnouncementNoticeTemplate: getOptionalValue(formData, 'smsAnnouncementNoticeTemplateDocumentId'),
+    smsEventUpdateNoticeTemplate: getOptionalValue(formData, 'smsEventUpdateNoticeTemplateDocumentId'),
+    emailRegistrationNoticeTemplate: getOptionalValue(formData, 'emailRegistrationNoticeTemplateDocumentId'),
+    emailAnnouncementNoticeTemplate: getOptionalValue(formData, 'emailAnnouncementNoticeTemplateDocumentId'),
+    emailEventUpdateNoticeTemplate: getOptionalValue(formData, 'emailEventUpdateNoticeTemplateDocumentId'),
   };
 }
 
@@ -1152,9 +1158,12 @@ export async function duplicateEventAction(sourceDocumentId: string) {
           userPartition: true,
           template: true,
           slots: true,
-          registrationNoticeTemplate: true,
-          announcementNoticeTemplate: true,
-          eventUpdateNoticeTemplate: true,
+          smsRegistrationNoticeTemplate: true,
+          smsAnnouncementNoticeTemplate: true,
+          smsEventUpdateNoticeTemplate: true,
+          emailRegistrationNoticeTemplate: true,
+          emailAnnouncementNoticeTemplate: true,
+          emailEventUpdateNoticeTemplate: true,
         },
       },
       {
@@ -1187,9 +1196,12 @@ export async function duplicateEventAction(sourceDocumentId: string) {
         publicSlug: duplicateEventCode,
         publishedToPortals: false,
         publicBaseUrl: source.publicBaseUrl,
-        registrationNoticeTemplate: getRelationDocumentId(source.registrationNoticeTemplate),
-        announcementNoticeTemplate: getRelationDocumentId(source.announcementNoticeTemplate),
-        eventUpdateNoticeTemplate: getRelationDocumentId(source.eventUpdateNoticeTemplate),
+        smsRegistrationNoticeTemplate: getRelationDocumentId(source.smsRegistrationNoticeTemplate),
+        smsAnnouncementNoticeTemplate: getRelationDocumentId(source.smsAnnouncementNoticeTemplate),
+        smsEventUpdateNoticeTemplate: getRelationDocumentId(source.smsEventUpdateNoticeTemplate),
+        emailRegistrationNoticeTemplate: getRelationDocumentId(source.emailRegistrationNoticeTemplate),
+        emailAnnouncementNoticeTemplate: getRelationDocumentId(source.emailAnnouncementNoticeTemplate),
+        emailEventUpdateNoticeTemplate: getRelationDocumentId(source.emailEventUpdateNoticeTemplate),
         userPartition: getRelationDocumentId(source.userPartition),
         template: getRelationDocumentId(source.template),
         eventSlots: (Array.isArray(source.slots) ? source.slots : []).reduce<EventPortalEventSlotPayload[]>((result, slot) => {

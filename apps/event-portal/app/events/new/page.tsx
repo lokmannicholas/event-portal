@@ -28,7 +28,18 @@ export default async function Page({ searchParams }: PageProps) {
   const query = (await searchParams) ?? {};
   const draft = query.notice === 'create-failed' ? await readCreateDraft<EventCreateDraft>('event') : undefined;
   const [partitionRows, templateRows, noticeTemplateRows] = await Promise.all([getPartitions(), getTemplates(), getNoticeTemplates()]);
-  const noticeTemplateOptions = [{ value: '', label: 'Not linked' }, ...noticeTemplateRows.map((item) => ({ value: item.documentId, label: `${item.name} · ${item.channel}` }))];
+  const smsNoticeTemplateOptions = [
+    { value: '', label: 'Not linked' },
+    ...noticeTemplateRows
+      .filter((item) => item.channel === 'SMS')
+      .map((item) => ({ value: item.documentId, label: item.name })),
+  ];
+  const emailNoticeTemplateOptions = [
+    { value: '', label: 'Not linked' },
+    ...noticeTemplateRows
+      .filter((item) => item.channel === 'EMAIL')
+      .map((item) => ({ value: item.documentId, label: item.name })),
+  ];
 
   return (
     <EapShell title="Create Event" subtitle="Create a registration event record that can later be released to ERP and surfaced to ECP.">
@@ -96,22 +107,40 @@ export default async function Page({ searchParams }: PageProps) {
               <TextAreaField label="Event notes" name="notes" defaultValue={draft?.notes} rows={3} />
               <FormGrid>
                 <SelectField
-                  label="Registration notice template"
-                  name="registrationNoticeTemplateDocumentId"
-                  defaultValue={draft?.registrationNoticeTemplateDocumentId ?? ''}
-                  options={noticeTemplateOptions}
+                  label="SMS Registration notice template"
+                  name="smsRegistrationNoticeTemplateDocumentId"
+                  defaultValue={draft?.smsRegistrationNoticeTemplateDocumentId ?? ''}
+                  options={smsNoticeTemplateOptions}
                 />
                 <SelectField
-                  label="Announcement notice template"
-                  name="announcementNoticeTemplateDocumentId"
-                  defaultValue={draft?.announcementNoticeTemplateDocumentId ?? ''}
-                  options={noticeTemplateOptions}
+                  label="SMS Announcement notice template"
+                  name="smsAnnouncementNoticeTemplateDocumentId"
+                  defaultValue={draft?.smsAnnouncementNoticeTemplateDocumentId ?? ''}
+                  options={smsNoticeTemplateOptions}
                 />
                 <SelectField
-                  label="Event update notice template"
-                  name="eventUpdateNoticeTemplateDocumentId"
-                  defaultValue={draft?.eventUpdateNoticeTemplateDocumentId ?? ''}
-                  options={noticeTemplateOptions}
+                  label="SMS Event update notice template"
+                  name="smsEventUpdateNoticeTemplateDocumentId"
+                  defaultValue={draft?.smsEventUpdateNoticeTemplateDocumentId ?? ''}
+                  options={smsNoticeTemplateOptions}
+                />
+                <SelectField
+                  label="EMAIL Registration notice template"
+                  name="emailRegistrationNoticeTemplateDocumentId"
+                  defaultValue={draft?.emailRegistrationNoticeTemplateDocumentId ?? ''}
+                  options={emailNoticeTemplateOptions}
+                />
+                <SelectField
+                  label="EMAIL Announcement notice template"
+                  name="emailAnnouncementNoticeTemplateDocumentId"
+                  defaultValue={draft?.emailAnnouncementNoticeTemplateDocumentId ?? ''}
+                  options={emailNoticeTemplateOptions}
+                />
+                <SelectField
+                  label="EMAIL Event update notice template"
+                  name="emailEventUpdateNoticeTemplateDocumentId"
+                  defaultValue={draft?.emailEventUpdateNoticeTemplateDocumentId ?? ''}
+                  options={emailNoticeTemplateOptions}
                 />
               </FormGrid>
 

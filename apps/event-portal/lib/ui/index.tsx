@@ -1,5 +1,12 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
+import {
+  buildPaginationHref,
+  getPaginationWindow,
+  PAGE_SIZE_OPTIONS,
+  type PaginationSearchParams,
+  type PaginationState,
+} from '../pagination';
 import { PortalSidebarNav, PortalSidebarOverlay, PortalSidebarToggle } from './portal-shell-client';
 import type { NavItem } from './types';
 
@@ -315,6 +322,130 @@ export function EmptyState(props: { title: string; description: string }) {
         <div className="portal-empty-state-title">{props.title}</div>
         <div className="portal-empty-state-description">{props.description}</div>
       </div>
+    </div>
+  );
+}
+
+export function PaginationControls(props: {
+  basePath: string;
+  searchParams?: PaginationSearchParams;
+  pagination: PaginationState<unknown>;
+  itemLabel?: string;
+}) {
+  const { basePath, searchParams, pagination, itemLabel = 'records' } = props;
+  const windowItems = getPaginationWindow(pagination.page, pagination.totalPages);
+  const preservedEntries = Object.entries(searchParams ?? {}).flatMap(([key, value]) => {
+    if (key === 'page' || key === 'pageSize' || value === undefined) {
+      return [];
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((entry) => ({ key, value: entry }));
+    }
+
+    return [{ key, value }];
+  });
+
+  return (
+    <div className="portal-pagination">
+      <div className="portal-pagination-meta">
+        <div className="portal-pagination-summary">
+          {pagination.totalItems === 0
+            ? `No ${itemLabel}.`
+            : `Showing ${pagination.startItem}-${pagination.endItem} of ${pagination.totalItems} ${itemLabel}.`}
+        </div>
+        <form action={basePath} method="get" className="portal-pagination-size-form">
+          {preservedEntries.map((entry, index) => (
+            <input key={`${entry.key}-${entry.value}-${index}`} type="hidden" name={entry.key} value={entry.value} />
+          ))}
+          <label className="portal-pagination-size-label">
+            <span>Page size</span>
+            <select name="pageSize" defaultValue={String(pagination.pageSize)} className="portal-pagination-size-select">
+              {PAGE_SIZE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="btn btn-outline-secondary portal-pagination-size-button">
+            Apply
+          </button>
+        </form>
+      </div>
+      {pagination.totalPages > 1 ? (
+        <nav className="portal-pagination-links" aria-label="Pagination">
+          {pagination.page > 1 ? (
+            <Link href={buildPaginationHref(basePath, searchParams, 1)} className="portal-pagination-link">
+              First
+            </Link>
+          ) : (
+            <span className="portal-pagination-link is-disabled" aria-disabled="true">
+              First
+            </span>
+          )}
+
+          {pagination.page > 1 ? (
+            <Link
+              href={buildPaginationHref(basePath, searchParams, pagination.page - 1)}
+              className="portal-pagination-link"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span className="portal-pagination-link is-disabled" aria-disabled="true">
+              Previous
+            </span>
+          )}
+
+          <div className="portal-pagination-pages">
+            {windowItems.map((item, index) =>
+              typeof item === 'number' ? (
+                item === pagination.page ? (
+                  <span key={item} className="portal-pagination-link is-active" aria-current="page">
+                    {item}
+                  </span>
+                ) : (
+                  <Link
+                    key={item}
+                    href={buildPaginationHref(basePath, searchParams, item)}
+                    className="portal-pagination-link"
+                  >
+                    {item}
+                  </Link>
+                )
+              ) : (
+                <span key={`${item}-${index}`} className="portal-pagination-ellipsis" aria-hidden="true">
+                  …
+                </span>
+              ),
+            )}
+          </div>
+
+          {pagination.page < pagination.totalPages ? (
+            <Link
+              href={buildPaginationHref(basePath, searchParams, pagination.page + 1)}
+              className="portal-pagination-link"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="portal-pagination-link is-disabled" aria-disabled="true">
+              Next
+            </span>
+          )}
+
+          {pagination.page < pagination.totalPages ? (
+            <Link href={buildPaginationHref(basePath, searchParams, pagination.totalPages)} className="portal-pagination-link">
+              Last
+            </Link>
+          ) : (
+            <span className="portal-pagination-link is-disabled" aria-disabled="true">
+              Last
+            </span>
+          )}
+        </nav>
+      ) : null}
     </div>
   );
 }
