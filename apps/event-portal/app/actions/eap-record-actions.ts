@@ -6,6 +6,7 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import type {
   AppointmentStatus,
   CommunicationPreference,
+  EventAccessType,
   EventStatus,
   GroupStatus,
   PortalRole,
@@ -18,7 +19,8 @@ import { getNoticeQueryString, eapRecordConfig, type EapRecordKind, getRecordCre
 import { getStrapiBaseUrl } from '../../lib/strapi-base-url';
 import { getServerStrapiRequestToken } from '../../lib/strapi-request-token';
 import { normalizeTemplateFields, type TemplateFieldFormValue } from '../../lib/template-form-fields';
-import type { EventPortalEventSlotPayload } from '../../lib/event-portal-types';
+import { normalizeTemplateLayoutSettings, parseTemplateLayoutSettingsJson } from '../../lib/template-layout';
+import type { EventPortalEventSlotPayload, EventPortalJsonValue } from '../../lib/event-portal-types';
 
 type EventSlotPlanRow = {
   id: string;
@@ -153,7 +155,7 @@ function normalizeStrapiTimeValue(value: string) {
 }
 
 function getCreateDraftKind(kind: EapRecordKind): EapCreateDraftKind | undefined {
-  if (kind === 'event' || kind === 'template') {
+  if (kind === 'event' || kind === 'eform' || kind === 'template') {
     return kind;
   }
 
@@ -166,6 +168,7 @@ function buildCreateDraft(kind: EapCreateDraftKind, formData: FormData) {
       return {
         eventName: getValue(formData, 'eventName'),
         eventCode: getValue(formData, 'eventCode'),
+        accessType: getOptionalValue(formData, 'accessType'),
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
         partitionDocumentId: getOptionalValue(formData, 'partitionDocumentId'),
@@ -191,12 +194,31 @@ function buildCreateDraft(kind: EapCreateDraftKind, formData: FormData) {
         emailEventUpdateNoticeTemplateDocumentId: getOptionalValue(formData, 'emailEventUpdateNoticeTemplateDocumentId'),
         slotPlanJson: getOptionalValue(formData, 'slotPlanJson'),
       };
+    case 'eform':
+      return {
+        eformName: getValue(formData, 'eformName'),
+        eformCode: getValue(formData, 'eformCode'),
+        accessType: getOptionalValue(formData, 'accessType'),
+        companyName: getValue(formData, 'companyName'),
+        location: getValue(formData, 'location'),
+        partitionDocumentId: getOptionalValue(formData, 'partitionDocumentId'),
+        templateDocumentId: getOptionalValue(formData, 'templateDocumentId'),
+        status: getOptionalValue(formData, 'status'),
+        eventStartDate: getOptionalValue(formData, 'eventStartDate'),
+        eventEndDate: getOptionalValue(formData, 'eventEndDate'),
+        showInEventPeriod: getValue(formData, 'showInEventPeriod'),
+        showInExpired: getValue(formData, 'showInExpired'),
+        description: getOptionalValue(formData, 'description'),
+        notes: getOptionalValue(formData, 'notes'),
+      };
     case 'template':
       return {
         name: getValue(formData, 'name'),
         description: getOptionalValue(formData, 'description'),
         partitionDocumentIds: getRelationValues(formData, 'partitionDocumentIds'),
         formFieldsJson: getOptionalValue(formData, 'formFieldsJson'),
+        layoutSettingsJson: getOptionalValue(formData, 'layoutSettingsJson'),
+        customCss: getOptionalValue(formData, 'customCss'),
       };
   }
 }
@@ -585,6 +607,42 @@ async function getSelectedFields(formData: FormData) {
   return normalizeTemplateFields(parseTemplateFieldValues(formData), mandatoryFields);
 }
 
+function parseTemplateLayoutValues(formData: FormData) {
+  const value = formData.get('layoutSettingsJson');
+
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined;
+  }
+
+  try {
+    return parseTemplateLayoutSettingsJson(value);
+  } catch {
+    throw new Error('Invalid template layout payload.');
+  }
+}
+
+function getTemplateFieldKeys(fields: Array<{ fieldKey?: string }>) {
+  return Array.from(
+    new Set(
+      fields
+        .map((field) => (typeof field.fieldKey === 'string' ? field.fieldKey.trim() : ''))
+        .filter(Boolean),
+    ),
+  );
+}
+
+function buildTemplateLayoutPayload(
+  formData: FormData,
+  fields: Array<{ fieldKey?: string }>,
+) {
+  const fieldKeys = getTemplateFieldKeys(fields);
+
+  return {
+    layoutSettings: normalizeTemplateLayoutSettings(fieldKeys, parseTemplateLayoutValues(formData)) as EventPortalJsonValue | undefined,
+    customCss: getOptionalValue(formData, 'customCss'),
+  };
+}
+
 async function getTemplateRecord(documentId?: string) {
   if (!documentId) {
     return undefined;
@@ -604,6 +662,12 @@ async function getTemplateRecord(documentId?: string) {
   } catch {
     return undefined;
   }
+}
+
+async function getCurrentTemplateFieldKeys(documentId: string) {
+  const templateRecord = await getTemplateRecord(documentId);
+  const formFields = Array.isArray(templateRecord?.formFields) ? templateRecord.formFields : [];
+  return getTemplateFieldKeys(formFields);
 }
 
 function buildEventNoticeTemplateRelations(formData: FormData) {
@@ -741,12 +805,16 @@ async function syncGroupPortalUsers(groupDocumentId: string, formData: FormData)
 async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
   switch (kind) {
     case 'template': {
+      const formFields = await getSelectedFields(formData);
+      const layoutPayload = buildTemplateLayoutPayload(formData, formFields);
+
       return eventPortalSdk.eventTemplates.create({
         name: getValue(formData, 'name'),
         description: getOptionalValue(formData, 'description'),
         eventTemplateStatus: 'ACTIVE',
         userPartitions: getRelationValues(formData, 'partitionDocumentIds'),
-        formFields: await getSelectedFields(formData),
+        formFields,
+        ...layoutPayload,
       });
     }
     case 'noticeTemplate': {
@@ -764,6 +832,7 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
     case 'event': {
       const appBaseUrl = await getAppBaseUrl();
       const eventStatus = getValue(formData, 'status') as EventStatus;
+      const eventAccessType = getValue(formData, 'accessType') as EventAccessType;
       const showInRegistrationPeriod = getOptionalBooleanValue(formData, 'showInRegistrationPeriod');
       const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
@@ -787,6 +856,7 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
         registrationEndDate: getValue(formData, 'registrationEndDate'),
         reminderOffsetDays: getNumberValue(formData, 'reminderOffsetDays'),
         publicSlug: getValue(formData, 'eventCode'),
+        eventAccessType,
         publicBaseUrl: appBaseUrl,
         publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
         userPartition: partitionDocumentId,
@@ -801,6 +871,38 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
       console.log('[eap] create event payload', payload);
 
       return eventPortalSdk.events.create(payload);
+    }
+    case 'eform': {
+      const appBaseUrl = await getAppBaseUrl();
+      const eventStatus = getValue(formData, 'status') as EventStatus;
+      const eventAccessType = getValue(formData, 'accessType') as EventAccessType;
+      const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
+      const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
+      const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
+      const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
+      validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
+      const payload = {
+        companyName: getValue(formData, 'companyName'),
+        location: getValue(formData, 'location'),
+        eformName: getValue(formData, 'eformName'),
+        eformDescription: getOptionalValue(formData, 'description'),
+        eformNotes: getOptionalValue(formData, 'notes'),
+        eventStatus,
+        eventStartDate: getValue(formData, 'eventStartDate'),
+        eventEndDate: getValue(formData, 'eventEndDate'),
+        publicSlug: getValue(formData, 'eformCode'),
+        eventAccessType,
+        publicBaseUrl: appBaseUrl,
+        publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
+        userPartition: partitionDocumentId,
+        template: templateRecord?.documentId,
+        ...(showInEventPeriod !== undefined ? { showInEventPeriod } : {}),
+        ...(showInExpired !== undefined ? { showInExpired } : {}),
+      };
+
+      console.log('[eap] create eform payload', payload);
+
+      return eventPortalSdk.eforms.create(payload);
     }
     case 'appointment':
       return eventPortalSdk.appointments.create({
@@ -900,11 +1002,15 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
 async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData: FormData) {
   switch (kind) {
     case 'template': {
+      const formFields = await getSelectedFields(formData);
+      const layoutPayload = buildTemplateLayoutPayload(formData, formFields);
+
       return eventPortalSdk.eventTemplates.update(documentId, {
         name: getValue(formData, 'name'),
         description: getOptionalValue(formData, 'description'),
         userPartitions: getRelationValues(formData, 'partitionDocumentIds'),
-        formFields: await getSelectedFields(formData),
+        formFields,
+        ...layoutPayload,
       });
     }
     case 'noticeTemplate': {
@@ -922,6 +1028,7 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
     case 'event': {
       const appBaseUrl = await getAppBaseUrl();
       const eventStatus = getValue(formData, 'status') as EventStatus;
+      const eventAccessType = getValue(formData, 'accessType') as EventAccessType;
       const showInRegistrationPeriod = getOptionalBooleanValue(formData, 'showInRegistrationPeriod');
       const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
@@ -944,6 +1051,7 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
         registrationEndDate: getValue(formData, 'registrationEndDate'),
         reminderOffsetDays: getNumberValue(formData, 'reminderOffsetDays'),
         publicSlug: getValue(formData, 'eventCode'),
+        eventAccessType,
         publicBaseUrl: appBaseUrl,
         publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
         userPartition: partitionDocumentId,
@@ -958,6 +1066,38 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
       console.log('[eap] update event payload', { documentId, ...payload });
 
       return eventPortalSdk.events.update(documentId, payload);
+    }
+    case 'eform': {
+      const appBaseUrl = await getAppBaseUrl();
+      const eventStatus = getValue(formData, 'status') as EventStatus;
+      const eventAccessType = getValue(formData, 'accessType') as EventAccessType;
+      const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
+      const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
+      const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
+      const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
+      validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
+      const payload = {
+        companyName: getValue(formData, 'companyName'),
+        location: getValue(formData, 'location'),
+        eformName: getValue(formData, 'eformName'),
+        eformDescription: getOptionalValue(formData, 'description'),
+        eformNotes: getOptionalValue(formData, 'notes'),
+        eventStatus,
+        eventStartDate: getValue(formData, 'eventStartDate'),
+        eventEndDate: getValue(formData, 'eventEndDate'),
+        publicSlug: getValue(formData, 'eformCode'),
+        eventAccessType,
+        publicBaseUrl: appBaseUrl,
+        publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
+        userPartition: partitionDocumentId,
+        template: templateRecord?.documentId,
+        ...(showInEventPeriod !== undefined ? { showInEventPeriod } : {}),
+        ...(showInExpired !== undefined ? { showInExpired } : {}),
+      };
+
+      console.log('[eap] update eform payload', { documentId, ...payload });
+
+      return eventPortalSdk.eforms.update(documentId, payload);
     }
     case 'appointment':
       return eventPortalSdk.appointments.update(documentId, {
@@ -1112,6 +1252,40 @@ export async function createRecordAction(kind: EapRecordKind, formData: FormData
   }
 }
 
+export async function saveTemplateLayoutAction(documentId: string, formData: FormData) {
+  const detailPath = `/templates/${documentId}/layout`;
+
+  if (!(await canWriteToStrapi())) {
+    redirectWithNotice(detailPath, 'update-failed');
+  }
+
+  try {
+    const fieldKeys = await getCurrentTemplateFieldKeys(documentId);
+
+    await eventPortalSdk.eventTemplates.update(
+      documentId,
+      {
+        ...buildTemplateLayoutPayload(formData, fieldKeys.map((fieldKey) => ({ fieldKey }))),
+      },
+      {
+        cache: 'no-store',
+        revalidate: false,
+      },
+    );
+
+    revalidatePath('/templates');
+    revalidatePath(`/templates/${documentId}`);
+    revalidatePath(detailPath);
+    redirectWithNotice(detailPath, 'updated', 'Layout saved', 'The template layout settings were saved.');
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
+    redirectWithNotice(detailPath, 'update-failed', 'Unable to save layout', getErrorMessage(error));
+  }
+}
+
 export async function updateRecordAction(kind: EapRecordKind, documentId: string, formData: FormData) {
   const detailPath = getRecordDetailPath(kind, documentId);
 
@@ -1194,6 +1368,7 @@ export async function duplicateEventAction(sourceDocumentId: string) {
         registrationEndDate: source.registrationEndDate,
         reminderOffsetDays: source.reminderOffsetDays ?? 2,
         publicSlug: duplicateEventCode,
+        eventAccessType: source.eventAccessType ?? 'PUBLIC',
         publishedToPortals: false,
         publicBaseUrl: source.publicBaseUrl,
         smsRegistrationNoticeTemplate: getRelationDocumentId(source.smsRegistrationNoticeTemplate),

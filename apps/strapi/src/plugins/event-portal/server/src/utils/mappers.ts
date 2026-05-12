@@ -159,6 +159,8 @@ export function mapTemplate(record: AnyRecord) {
     partitionDocumentIds: partitions.map((partition: any) => partition.documentId).filter(Boolean),
     fieldCount: fields.length,
     fields,
+    layoutSettings: record.layoutSettings,
+    customCss: record.customCss,
   };
 }
 
@@ -201,8 +203,11 @@ function mapEventSlotsToDates(slots: AnyRecord[]) {
 
 export function mapEventListItem(record: AnyRecord) {
   const eventCode = record.publicSlug ?? record.documentId;
+  const publicIdentifier = record.publicUuid ?? record.documentId;
+  const accessType = record.eventAccessType === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+  const accessSegment = accessType === 'PRIVATE' ? 'private' : 'public';
   const partitionCode = record.userPartition?.code ?? '';
-  const publicPath = `/p/${partitionCode}/e/${eventCode}`;
+  const publicPath = `/e/${accessSegment}/${publicIdentifier}`;
 
   return {
     documentId: record.documentId,
@@ -213,6 +218,7 @@ export function mapEventListItem(record: AnyRecord) {
     description: record.eventDescription,
     notes: record.eventNotes,
     partitionCode,
+    accessType,
     status: getStatus(record, 'eventStatus'),
     registrationStartDate: record.registrationStartDate,
     registrationEndDate: record.registrationEndDate,
@@ -227,6 +233,8 @@ export function mapEventListItem(record: AnyRecord) {
     publishedToPortals: record.publishedToPortals === true,
     publicUrl: publicPath,
     qrPayload: publicPath,
+    layoutSettings: record.template?.layoutSettings,
+    customCss: record.template?.customCss,
   };
 }
 
@@ -246,6 +254,65 @@ export function mapEventDetail(record: AnyRecord) {
       fields: toArray<any>(record.template?.formFields).map((field: any) => mapField(field)),
       dates: mapEventSlotsToDates(toArray<any>(record.slots)),
       notifications,
+    },
+  };
+}
+
+function buildEformPaths(record: AnyRecord) {
+  const eformCode = record.publicSlug ?? record.documentId;
+  const publicIdentifier = record.publicUuid ?? record.documentId;
+  const accessType = record.eventAccessType === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+  const accessSegment = accessType === 'PRIVATE' ? 'private' : 'public';
+  const partitionCode = record.userPartition?.code ?? '';
+  const publicPath = `/eform/${accessSegment}/${publicIdentifier}`;
+
+  return {
+    eformCode,
+    accessType,
+    partitionCode,
+    publicUrl: publicPath,
+    qrPayload: publicPath,
+  };
+}
+
+export function mapEformListItem(record: AnyRecord) {
+  const paths = buildEformPaths(record);
+
+  return {
+    documentId: record.documentId,
+    eformCode: paths.eformCode,
+    companyName: record.companyName,
+    companyNameZh: record.companyNameZh,
+    location: record.location,
+    locationZh: record.locationZh,
+    eformName: record.eformName,
+    eformNameZh: record.eformNameZh,
+    description: record.eformDescription,
+    descriptionZh: record.eformDescriptionZh,
+    notes: record.eformNotes,
+    notesZh: record.eformNotesZh,
+    partitionCode: paths.partitionCode,
+    partitionDocumentId: record.userPartition?.documentId,
+    templateDocumentId: record.template?.documentId,
+    accessType: paths.accessType,
+    status: getStatus(record, 'eventStatus'),
+    eventStartDate: record.eventStartDate,
+    eventEndDate: record.eventEndDate,
+    showInEventPeriod: record.showInEventPeriod !== false,
+    showInExpired: record.showInExpired === true,
+    publishedToPortals: record.publishedToPortals === true,
+    publicUrl: paths.publicUrl,
+    qrPayload: paths.qrPayload,
+    layoutSettings: record.template?.layoutSettings,
+    customCss: record.template?.customCss,
+  };
+}
+
+export function mapEformDetail(record: AnyRecord) {
+  return {
+    eform: {
+      ...mapEformListItem(record),
+      fields: toArray<any>(record.template?.formFields).map((field: any) => mapField(field)),
     },
   };
 }

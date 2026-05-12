@@ -5,11 +5,13 @@ import { createPortal } from 'react-dom';
 import { EmptyState, InlineNotice, SimpleTable, StatusBadge } from '@event-portal/ui';
 import type { AppointmentDTO } from '@event-portal/contracts';
 import { cancelEcpAppointmentAction } from '../app/actions/ecp-appointment-actions';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 
 type EcpAppointmentTableProps = {
   appointments: AppointmentDTO[];
   groupCode: string;
   eventCode: string;
+  language?: PortalLanguage;
 };
 
 type FeedbackState =
@@ -20,6 +22,31 @@ type FeedbackState =
   | null;
 
 export function EcpAppointmentTable(props: EcpAppointmentTableProps) {
+  const language = props.language ?? 'en';
+  const copy = {
+    emptyTitle: getPortalText(language, 'No appointments yet', '尚未有預約'),
+    emptyDescription: getPortalText(language, 'Appointments created from ERP registration will appear here for this event.', '由 ERP 登記建立的預約會顯示於此活動下。'),
+    failedTitle: getPortalText(language, 'Cancellation failed', '取消失敗'),
+    successTitle: getPortalText(language, 'Appointment cancelled', '預約已取消'),
+    reference: getPortalText(language, 'Reference', '編號'),
+    participant: getPortalText(language, 'Participant', '參加者'),
+    contact: getPortalText(language, 'Contact', '聯絡方式'),
+    slot: getPortalText(language, 'Date / Slot', '日期 / 時段'),
+    status: getPortalText(language, 'Status', '狀態'),
+    action: getPortalText(language, 'Action', '操作'),
+    cancelled: getPortalText(language, 'Cancelled', '已取消'),
+    cancel: getPortalText(language, 'Cancel', '取消'),
+    cancelling: getPortalText(language, 'Cancelling...', '取消中...'),
+    dialogTitle: getPortalText(language, 'Cancel appointment', '取消預約'),
+    dialogDescription: getPortalText(
+      language,
+      'This will cancel the appointment, release the slot quota, and trigger the participant cancellation notice.',
+      '此操作會取消預約、釋放時段名額，並觸發向參加者發送取消通知。',
+    ),
+    close: getPortalText(language, 'Close', '關閉'),
+    keep: getPortalText(language, 'Keep appointment', '保留預約'),
+    confirm: getPortalText(language, 'Confirm cancellation', '確認取消'),
+  };
   const [appointments, setAppointments] = useState(props.appointments);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(null);
@@ -78,7 +105,7 @@ export function EcpAppointmentTable(props: EcpAppointmentTableProps) {
     if (result.status === 'FAILED') {
       setFeedback({
         tone: 'error',
-        message: result.errorMessage || `Failed to cancel ${activeAppointment.bookingReference}.`,
+        message: result.errorMessage || getPortalText(language, `Failed to cancel ${activeAppointment.bookingReference}.`, `無法取消 ${activeAppointment.bookingReference}。`),
       });
       closeDialog();
       return;
@@ -96,27 +123,27 @@ export function EcpAppointmentTable(props: EcpAppointmentTableProps) {
     );
     setFeedback({
       tone: 'success',
-      message: `${activeAppointment.bookingReference} was cancelled successfully.`,
+      message: getPortalText(language, `${activeAppointment.bookingReference} was cancelled successfully.`, `${activeAppointment.bookingReference} 已成功取消。`),
     });
     closeDialog();
   }
 
   if (appointments.length === 0) {
-    return <EmptyState title="No appointments yet" description="Appointments created from ERP registration will appear here for this event." />;
+    return <EmptyState title={copy.emptyTitle} description={copy.emptyDescription} />;
   }
 
   return (
     <>
-      {feedback ? <InlineNotice title={feedback.tone === 'error' ? 'Cancellation failed' : 'Appointment cancelled'}>{feedback.message}</InlineNotice> : null}
+      {feedback ? <InlineNotice title={feedback.tone === 'error' ? copy.failedTitle : copy.successTitle}>{feedback.message}</InlineNotice> : null}
 
       <SimpleTable
         columns={[
-          { key: 'reference', label: 'Reference' },
-          { key: 'participant', label: 'Participant' },
-          { key: 'contact', label: 'Contact' },
-          { key: 'slot', label: 'Date / Slot' },
-          { key: 'status', label: 'Status' },
-          { key: 'action', label: 'Action' },
+          { key: 'reference', label: copy.reference },
+          { key: 'participant', label: copy.participant },
+          { key: 'contact', label: copy.contact },
+          { key: 'slot', label: copy.slot },
+          { key: 'status', label: copy.status },
+          { key: 'action', label: copy.action },
         ]}
         rows={appointments.map((appointment) => {
           const isCancelled = appointment.status === 'CANCELLED';
@@ -129,7 +156,7 @@ export function EcpAppointmentTable(props: EcpAppointmentTableProps) {
             slot: `${appointment.appointmentDate} ${appointment.appointmentStartTime}-${appointment.appointmentEndTime}`,
             status: <StatusBadge value={appointment.status} />,
             action: isCancelled ? (
-              <span className="portal-table-action-muted">Cancelled</span>
+              <span className="portal-table-action-muted">{copy.cancelled}</span>
             ) : (
               <button
                 type="button"
@@ -137,7 +164,7 @@ export function EcpAppointmentTable(props: EcpAppointmentTableProps) {
                 disabled={Boolean(submittingAppointmentId)}
                 onClick={() => openDialog(appointment.documentId)}
               >
-                {isSubmitting ? 'Cancelling...' : 'Cancel'}
+                {isSubmitting ? copy.cancelling : copy.cancel}
               </button>
             ),
           };
@@ -150,28 +177,32 @@ export function EcpAppointmentTable(props: EcpAppointmentTableProps) {
               <div className="portal-dialog-form">
                 <div className="portal-dialog-header">
                   <div>
-                    <strong>Cancel appointment</strong>
-                    <p>This will cancel the appointment, release the slot quota, and trigger the participant cancellation notice.</p>
+                    <strong>{copy.dialogTitle}</strong>
+                    <p>{copy.dialogDescription}</p>
                   </div>
                   <button type="button" className="btn btn-outline-secondary" onClick={closeDialog} disabled={Boolean(submittingAppointmentId)}>
-                    Close
+                    {copy.close}
                   </button>
                 </div>
 
                 {activeAppointment ? (
                   <div className="portal-dialog-copy">
                     <p>
-                      Cancel <strong>{activeAppointment.bookingReference}</strong> for <strong>{activeAppointment.participantName}</strong>?
+                      {getPortalText(
+                        language,
+                        <>Cancel <strong>{activeAppointment.bookingReference}</strong> for <strong>{activeAppointment.participantName}</strong>?</>,
+                        <>確定取消 <strong>{activeAppointment.participantName}</strong> 的 <strong>{activeAppointment.bookingReference}</strong>？</>,
+                      )}
                     </p>
                   </div>
                 ) : null}
 
                 <div className="portal-dialog-actions">
                   <button type="button" className="btn btn-outline-secondary" onClick={closeDialog} disabled={Boolean(submittingAppointmentId)}>
-                    Keep appointment
+                    {copy.keep}
                   </button>
                   <button type="button" className="btn btn-primary" onClick={handleConfirmCancel} disabled={!activeAppointment || Boolean(submittingAppointmentId)}>
-                    {submittingAppointmentId ? 'Cancelling...' : 'Confirm cancellation'}
+                    {submittingAppointmentId ? copy.cancelling : copy.confirm}
                   </button>
                 </div>
               </div>

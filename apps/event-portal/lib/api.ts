@@ -2,6 +2,9 @@ import type {
   AppointmentDTO,
   ContactInfoDTO,
   DashboardDTO,
+  EformDetailDTO,
+  EformListItemDTO,
+  EventAccessType,
   EventDetailDTO,
   EventListItemDTO,
   EventTemplateDTO,
@@ -15,6 +18,7 @@ import type {
   UserPartitionDTO,
 } from '@event-portal/contracts';
 import { eventPortalQueries, eventPortalSdk, type EventPortalFieldConfigComponent, type EventPortalMandatoryFieldEntity } from './event-portal-sdk';
+import { normalizeTemplateLayoutSettings } from './template-layout';
 
 type AnyRecord = Record<string, any>;
 
@@ -180,6 +184,10 @@ function mapUserAccount(record: AnyRecord): UserAccountDTO {
 function mapTemplate(record: AnyRecord): EventTemplateDTO {
   const fields = toArray<any>(record.formFields).map((field) => mapField(field));
   const partitions = toArray<any>(record.userPartitions ?? (record.userPartition ? [record.userPartition] : []));
+  const layoutSettings = normalizeTemplateLayoutSettings(
+    fields.map((field) => field.fieldKey),
+    record.layoutSettings,
+  );
 
   return {
     documentId: record.documentId,
@@ -189,6 +197,8 @@ function mapTemplate(record: AnyRecord): EventTemplateDTO {
     partitionDocumentIds: partitions.map((partition) => partition.documentId).filter(Boolean),
     fieldCount: fields.length,
     fields,
+    layoutSettings,
+    customCss: record.customCss,
   };
 }
 
@@ -268,11 +278,15 @@ function mapEventSlotsToDates(slots: AnyRecord[]) {
 
 function buildEventPaths(record: AnyRecord) {
   const eventCode = record.publicSlug ?? record.documentId;
+  const publicIdentifier = record.publicUuid ?? record.documentId;
+  const accessType: EventAccessType = record.eventAccessType === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+  const accessSegment = accessType === 'PRIVATE' ? 'private' : 'public';
   const partitionCode = record.userPartition?.code ?? '';
-  const publicPath = `/p/${partitionCode}/e/${eventCode}`;
+  const publicPath = `/e/${accessSegment}/${publicIdentifier}`;
 
   return {
     eventCode,
+    accessType,
     partitionCode,
     publicUrl: publicPath,
     qrPayload: publicPath,
@@ -281,6 +295,7 @@ function buildEventPaths(record: AnyRecord) {
 
 function mapEventListItem(record: AnyRecord): EventListItemDTO {
   const paths = buildEventPaths(record);
+  const templateFieldKeys = toArray<any>(record.template?.formFields).map((field) => String(field.fieldKey ?? field.key ?? ''));
 
   return {
     documentId: record.documentId,
@@ -295,6 +310,7 @@ function mapEventListItem(record: AnyRecord): EventListItemDTO {
     descriptionZh: record.eventDescriptionZh,
     notes: record.eventNotes,
     notesZh: record.eventNotesZh,
+    accessType: paths.accessType,
     partitionCode: paths.partitionCode,
     partitionDocumentId: record.userPartition?.documentId,
     templateDocumentId: record.template?.documentId,
@@ -312,6 +328,8 @@ function mapEventListItem(record: AnyRecord): EventListItemDTO {
     publishedToPortals: record.publishedToPortals === true,
     publicUrl: paths.publicUrl,
     qrPayload: paths.qrPayload,
+    layoutSettings: normalizeTemplateLayoutSettings(templateFieldKeys, record.template?.layoutSettings),
+    customCss: record.template?.customCss,
   };
 }
 
@@ -331,6 +349,66 @@ function mapEventDetail(record: AnyRecord): EventDetailDTO {
       fields: toArray<any>(record.template?.formFields).map((field) => mapField(field)),
       dates: mapEventSlotsToDates(toArray<any>(record.slots)),
       notifications,
+    },
+  };
+}
+
+function buildEformPaths(record: AnyRecord) {
+  const eformCode = record.publicSlug ?? record.documentId;
+  const publicIdentifier = record.publicUuid ?? record.documentId;
+  const accessType: EventAccessType = record.eventAccessType === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+  const accessSegment = accessType === 'PRIVATE' ? 'private' : 'public';
+  const partitionCode = record.userPartition?.code ?? '';
+  const publicPath = `/eform/${accessSegment}/${publicIdentifier}`;
+
+  return {
+    eformCode,
+    accessType,
+    partitionCode,
+    publicUrl: publicPath,
+    qrPayload: publicPath,
+  };
+}
+
+function mapEformListItem(record: AnyRecord): EformListItemDTO {
+  const paths = buildEformPaths(record);
+  const templateFieldKeys = toArray<any>(record.template?.formFields).map((field) => String(field.fieldKey ?? field.key ?? ''));
+
+  return {
+    documentId: record.documentId,
+    eformCode: paths.eformCode,
+    companyName: record.companyName,
+    companyNameZh: record.companyNameZh,
+    location: record.location,
+    locationZh: record.locationZh,
+    eformName: record.eformName,
+    eformNameZh: record.eformNameZh,
+    description: record.eformDescription,
+    descriptionZh: record.eformDescriptionZh,
+    notes: record.eformNotes,
+    notesZh: record.eformNotesZh,
+    accessType: paths.accessType,
+    partitionCode: paths.partitionCode,
+    partitionDocumentId: record.userPartition?.documentId,
+    templateDocumentId: record.template?.documentId,
+    status: getStatus(record, 'eventStatus'),
+    eventStartDate: record.eventStartDate,
+    eventEndDate: record.eventEndDate,
+    showInEventPeriod: getOptionalBoolean(record.showInEventPeriod),
+    showInExpired: getOptionalBoolean(record.showInExpired),
+    publishedToPortals: record.publishedToPortals === true,
+    publicUrl: paths.publicUrl,
+    qrPayload: paths.qrPayload,
+    layoutSettings: normalizeTemplateLayoutSettings(templateFieldKeys, record.template?.layoutSettings),
+    customCss: record.template?.customCss,
+  };
+}
+
+function mapEformDetail(record: AnyRecord): EformDetailDTO {
+  return {
+    eform: {
+      ...mapEformListItem(record),
+      fields: toArray<any>(record.template?.formFields).map((field) => mapField(field)),
     },
   };
 }
@@ -616,6 +694,35 @@ export async function getEvent(documentId: string): Promise<EventDetailDTO | und
     });
 
     return mapEventDetail(response.data);
+  }, undefined);
+}
+
+export async function getEforms(): Promise<EformListItemDTO[]> {
+  const response = await eventPortalSdk.eforms.findMany({
+    populate: {
+      userPartition: true,
+      template: true,
+    },
+    sort: ['eventStartDate:asc', 'eformName:asc'],
+  });
+
+  return response.data.map((record) => mapEformListItem(record));
+}
+
+export async function getEform(documentId: string): Promise<EformDetailDTO | undefined> {
+  return withFallback(async () => {
+    const response = await eventPortalSdk.eforms.findOne(documentId, {
+      populate: {
+        userPartition: true,
+        template: {
+          populate: {
+            formFields: true,
+          },
+        },
+      },
+    });
+
+    return mapEformDetail(response.data);
   }, undefined);
 }
 

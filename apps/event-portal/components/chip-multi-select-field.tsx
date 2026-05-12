@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 
 type Option = {
   value: string;
@@ -15,10 +16,12 @@ type ChipMultiSelectFieldProps = {
   helperText?: string;
   itemLabelSingular?: string;
   itemLabelPlural?: string;
+  language?: PortalLanguage;
 };
 
 export function ChipMultiSelectField(props: ChipMultiSelectFieldProps) {
   const [selectedValues, setSelectedValues] = useState<string[]>(props.defaultValue ?? []);
+  const language = props.language ?? 'en';
   const itemLabelSingular = props.itemLabelSingular ?? 'item';
   const itemLabelPlural = props.itemLabelPlural ?? `${itemLabelSingular}s`;
 
@@ -32,8 +35,12 @@ export function ChipMultiSelectField(props: ChipMultiSelectFieldProps) {
       {props.helperText ? <p className="portal-helper-text">{props.helperText}</p> : null}
       <p className="portal-selection-summary">
         {selectedValues.length > 0
-          ? `${selectedValues.length} ${selectedValues.length === 1 ? itemLabelSingular : itemLabelPlural} selected`
-          : `No ${itemLabelPlural} selected`}
+          ? getPortalText(
+              language,
+              `${selectedValues.length} ${selectedValues.length === 1 ? itemLabelSingular : itemLabelPlural} selected`,
+              `已選擇 ${selectedValues.length} 個${itemLabelPlural}`,
+            )
+          : getPortalText(language, `No ${itemLabelPlural} selected`, `未選擇任何${itemLabelPlural}`)}
       </p>
       {props.options.length > 0 ? (
         <div className="portal-chip-list">
@@ -54,7 +61,7 @@ export function ChipMultiSelectField(props: ChipMultiSelectFieldProps) {
           })}
         </div>
       ) : (
-        <div className="portal-empty-box">No options available.</div>
+        <div className="portal-empty-box">{getPortalText(language, 'No options available.', '沒有可用選項。')}</div>
       )}
       {selectedValues.map((value) => (
         <input key={value} type="hidden" name={props.name} value={value} />

@@ -2,14 +2,17 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { getPortalText, type PortalLanguage } from '../portal-language';
 
 export function PortalUserMenu(props: {
   username: string;
   email: string;
   children?: ReactNode;
+  language?: PortalLanguage;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const language = props.language ?? 'en';
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -38,7 +41,7 @@ export function PortalUserMenu(props: {
       <button
         type="button"
         className="pc-head-link portal-account-trigger"
-        aria-label="Account menu"
+        aria-label={getPortalText(language, 'Account menu', '帳戶選單')}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}

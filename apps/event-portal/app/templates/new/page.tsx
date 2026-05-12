@@ -52,6 +52,10 @@ export default async function Page({ searchParams }: PageProps) {
                 <TemplateFormFieldsEditor initialFields={mandatoryFields} initialFieldsJson={draft?.formFieldsJson} />
               </div>
 
+              <div style={{ color: '#5b677a', fontSize: '14px' }}>
+                After you create the template, open its dedicated layout page to customize field placement, component colors, title alignment, and custom CSS for ERP.
+              </div>
+
               <SubmitRow submitLabel="Create template" cancelHref="/templates" cancelLabel="Cancel" />
             </Stack>
           </form>

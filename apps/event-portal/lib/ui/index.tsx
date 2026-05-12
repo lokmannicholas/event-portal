@@ -7,6 +7,7 @@ import {
   type PaginationSearchParams,
   type PaginationState,
 } from '../pagination';
+import { getPortalText, type PortalLanguage } from '../portal-language';
 import { PortalSidebarNav, PortalSidebarOverlay, PortalSidebarToggle } from './portal-shell-client';
 import type { NavItem } from './types';
 
@@ -28,6 +29,7 @@ export function PortalShell(props: {
   hideAside?: boolean;
   publicSectionLabel?: string;
   publicNavAriaLabel?: string;
+  language?: PortalLanguage;
 }) {
   const {
     portal,
@@ -45,10 +47,16 @@ export function PortalShell(props: {
     hideAside,
     publicSectionLabel = 'ERP Public Portal',
     publicNavAriaLabel = 'Portal navigation',
+    language = 'en',
   } = props;
+  const copy = {
+    secureAccess: getPortalText(language, 'Secure Access', '安全登入'),
+    workspace: getPortalText(language, 'Event Portal workspace', '活動入口工作區'),
+    home: getPortalText(language, 'Home', '主頁'),
+  };
   const portalCode = resolvePortalCode(portal);
   const landingHref = findFirstHref(nav) ?? '/';
-  const headerSummary = headerCaption ?? 'Event Portal workspace';
+  const headerSummary = headerCaption ?? copy.workspace;
   const brandMark = (
     <span className={`portal-brand-mark${brandImageSrc ? ' is-image' : ''}`}>
       {brandImageSrc ? <img src={brandImageSrc} alt={brandImageAlt ?? `${portalCode} logo`} /> : <span className="portal-brand-glyph" aria-hidden="true" />}
@@ -75,7 +83,7 @@ export function PortalShell(props: {
                   </span>
                 </Link>
                 <div className="portal-auth-header">
-                  <div className="portal-section-label">Secure Access</div>
+                  <div className="portal-section-label">{copy.secureAccess}</div>
                   <h1>{title}</h1>
                   {subtitle ? <p>{subtitle}</p> : null}
                 </div>
@@ -194,7 +202,7 @@ export function PortalShell(props: {
               </div>
               <ul className="breadcrumb">
                 <li className="breadcrumb-item">
-                  <Link href={landingHref}>Home</Link>
+                  <Link href={landingHref}>{copy.home}</Link>
                 </li>
                 <li className="breadcrumb-item">{title}</li>
               </ul>
@@ -341,9 +349,22 @@ export function PaginationControls(props: {
   searchParams?: PaginationSearchParams;
   pagination: PaginationState<unknown>;
   itemLabel?: string;
+  language?: PortalLanguage;
 }) {
-  const { basePath, searchParams, pagination, itemLabel = 'records' } = props;
+  const { basePath, searchParams, pagination, itemLabel = 'records', language = 'en' } = props;
   const windowItems = getPaginationWindow(pagination.page, pagination.totalPages);
+  const copy = {
+    pageSize: getPortalText(language, 'Page size', '每頁數量'),
+    apply: getPortalText(language, 'Apply', '套用'),
+    first: getPortalText(language, 'First', '最前'),
+    previous: getPortalText(language, 'Previous', '上一頁'),
+    next: getPortalText(language, 'Next', '下一頁'),
+    last: getPortalText(language, 'Last', '最後'),
+    pagination: getPortalText(language, 'Pagination', '分頁'),
+    none: getPortalText(language, `No ${itemLabel}.`, `沒有${itemLabel}。`),
+    showing: (start: number, end: number, total: number) =>
+      getPortalText(language, `Showing ${start}-${end} of ${total} ${itemLabel}.`, `顯示第 ${start}-${end} 項，共 ${total} 項${itemLabel}。`),
+  };
   const preservedEntries = Object.entries(searchParams ?? {}).flatMap(([key, value]) => {
     if (key === 'page' || key === 'pageSize' || value === undefined) {
       return [];
@@ -361,15 +382,15 @@ export function PaginationControls(props: {
       <div className="portal-pagination-meta">
         <div className="portal-pagination-summary">
           {pagination.totalItems === 0
-            ? `No ${itemLabel}.`
-            : `Showing ${pagination.startItem}-${pagination.endItem} of ${pagination.totalItems} ${itemLabel}.`}
+            ? copy.none
+            : copy.showing(pagination.startItem, pagination.endItem, pagination.totalItems)}
         </div>
         <form action={basePath} method="get" className="portal-pagination-size-form">
           {preservedEntries.map((entry, index) => (
             <input key={`${entry.key}-${entry.value}-${index}`} type="hidden" name={entry.key} value={entry.value} />
           ))}
           <label className="portal-pagination-size-label">
-            <span>Page size</span>
+            <span>{copy.pageSize}</span>
             <select name="pageSize" defaultValue={String(pagination.pageSize)} className="portal-pagination-size-select">
               {PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -379,19 +400,19 @@ export function PaginationControls(props: {
             </select>
           </label>
           <button type="submit" className="btn btn-outline-secondary portal-pagination-size-button">
-            Apply
+            {copy.apply}
           </button>
         </form>
       </div>
       {pagination.totalPages > 1 ? (
-        <nav className="portal-pagination-links" aria-label="Pagination">
+        <nav className="portal-pagination-links" aria-label={copy.pagination}>
           {pagination.page > 1 ? (
             <Link href={buildPaginationHref(basePath, searchParams, 1)} className="portal-pagination-link">
-              First
+              {copy.first}
             </Link>
           ) : (
             <span className="portal-pagination-link is-disabled" aria-disabled="true">
-              First
+              {copy.first}
             </span>
           )}
 
@@ -400,11 +421,11 @@ export function PaginationControls(props: {
               href={buildPaginationHref(basePath, searchParams, pagination.page - 1)}
               className="portal-pagination-link"
             >
-              Previous
+              {copy.previous}
             </Link>
           ) : (
             <span className="portal-pagination-link is-disabled" aria-disabled="true">
-              Previous
+              {copy.previous}
             </span>
           )}
 
@@ -432,28 +453,28 @@ export function PaginationControls(props: {
             )}
           </div>
 
-          {pagination.page < pagination.totalPages ? (
-            <Link
-              href={buildPaginationHref(basePath, searchParams, pagination.page + 1)}
-              className="portal-pagination-link"
-            >
-              Next
-            </Link>
-          ) : (
-            <span className="portal-pagination-link is-disabled" aria-disabled="true">
-              Next
-            </span>
-          )}
+            {pagination.page < pagination.totalPages ? (
+              <Link
+                href={buildPaginationHref(basePath, searchParams, pagination.page + 1)}
+                className="portal-pagination-link"
+              >
+                {copy.next}
+              </Link>
+            ) : (
+              <span className="portal-pagination-link is-disabled" aria-disabled="true">
+                {copy.next}
+              </span>
+            )}
 
-          {pagination.page < pagination.totalPages ? (
-            <Link href={buildPaginationHref(basePath, searchParams, pagination.totalPages)} className="portal-pagination-link">
-              Last
-            </Link>
-          ) : (
-            <span className="portal-pagination-link is-disabled" aria-disabled="true">
-              Last
-            </span>
-          )}
+            {pagination.page < pagination.totalPages ? (
+              <Link href={buildPaginationHref(basePath, searchParams, pagination.totalPages)} className="portal-pagination-link">
+                {copy.last}
+              </Link>
+            ) : (
+              <span className="portal-pagination-link is-disabled" aria-disabled="true">
+                {copy.last}
+              </span>
+            )}
         </nav>
       ) : null}
     </div>

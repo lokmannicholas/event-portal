@@ -63,6 +63,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const emailRegistrationNotice = getNotificationTemplate(event.notifications, 'REGISTRATION', 'EMAIL');
   const emailAnnouncementNotice = getNotificationTemplate(event.notifications, 'ANNOUNCEMENT', 'EMAIL');
   const emailEventUpdateNotice = getNotificationTemplate(event.notifications, 'EVENT_UPDATE', 'EMAIL');
+  const hasCustomTemplateLayout = Boolean(event.layoutSettings || event.customCss);
   const smsNoticeTemplateOptions = [
     { value: '', label: 'Not linked' },
     ...noticeTemplateRows
@@ -93,6 +94,15 @@ export default async function Page({ params, searchParams }: PageProps) {
                   <FormGrid>
                     <Field label="Event name" name="eventName" defaultValue={event.eventName} required />
                     <Field label="Event code" name="eventCode" defaultValue={event.eventCode} required />
+                    <SelectField
+                      label="ERP URL type"
+                      name="accessType"
+                      defaultValue={event.accessType}
+                      options={[
+                        { value: 'PUBLIC', label: 'Public · /e/public/{uuid}' },
+                        { value: 'PRIVATE', label: 'Private · /e/private/{uuid}' },
+                      ]}
+                    />
                     <Field label="Company" name="companyName" defaultValue={event.companyName} required />
                     <Field label="Location" name="location" defaultValue={event.location} required />
                     <SelectField
@@ -197,7 +207,8 @@ export default async function Page({ params, searchParams }: PageProps) {
                     { label: 'Status', value: <StatusBadge value={event.status} /> },
                     { label: 'Published to ERP', value: event.publishedToPortals ? 'Yes' : 'No' },
                     { label: 'Partition', value: event.partitionCode },
-                    { label: 'Layout mode', value: event.layoutMode ?? 'TWO_COLUMN' },
+                    { label: 'ERP URL type', value: event.accessType },
+                    { label: 'Template layout', value: hasCustomTemplateLayout ? 'Custom' : 'Default' },
                     { label: 'Show in registration period', value: formatOptionalBoolean(event.showInRegistrationPeriod) },
                     { label: 'Show in event period', value: formatOptionalBoolean(event.showInEventPeriod) },
                     { label: 'Show in expired', value: formatOptionalBoolean(event.showInExpired) },

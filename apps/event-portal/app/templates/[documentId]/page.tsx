@@ -30,6 +30,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   }
 
   const editableFields = mergeTemplateFields(mandatoryFields, record.fields);
+  const hasCustomLayout = Boolean(record.layoutSettings || record.customCss);
 
   return (
     <EapShell title={record.name} subtitle="Update the reusable form fields and partition assignment for this template.">
@@ -37,6 +38,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         <ActionRow>
           <ActionLink href="/templates" label="Back to Template Master" variant="secondary" />
           <ActionLink href="/templates/new" label="Create template" />
+          <ActionLink href={`/templates/${record.documentId}/layout`} label="Customize layout" />
         </ActionRow>
         <NoticeBanner code={query?.notice} title={query?.title} description={query?.message} />
 
@@ -45,6 +47,8 @@ export default async function Page({ params, searchParams }: PageProps) {
             <Card title="Template detail" description="This record controls the field list and partition assignment used by registration forms.">
               <form action={updateRecordAction.bind(null, 'template', record.documentId)}>
                 <Stack gap={16}>
+                  <input type="hidden" name="layoutSettingsJson" value={record.layoutSettings ? JSON.stringify(record.layoutSettings) : ''} readOnly />
+                  <input type="hidden" name="customCss" value={record.customCss ?? ''} readOnly />
                   <FormGrid>
                     <Field label="Template name" name="name" defaultValue={record.name} required />
                   </FormGrid>
@@ -81,6 +85,7 @@ export default async function Page({ params, searchParams }: PageProps) {
                   { label: 'Document id', value: record.documentId },
                   { label: 'Partitions', value: record.partitionCodes.join(', ') || '-' },
                   { label: 'Fields', value: String(editableFields.length) },
+                  { label: 'ERP layout', value: hasCustomLayout ? 'Custom' : 'Default' },
                 ]}
               />
             </Card>

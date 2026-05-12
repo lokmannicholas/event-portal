@@ -11,6 +11,12 @@ import type {
   EventPortalContactInfoCreateInput,
   EventPortalContactInfoEntity,
   EventPortalContactInfoUpdateInput,
+  EventPortalEformCreateInput,
+  EventPortalEformEntity,
+  EventPortalEformSubmissionCreateInput,
+  EventPortalEformSubmissionEntity,
+  EventPortalEformSubmissionUpdateInput,
+  EventPortalEformUpdateInput,
   EventPortalEventCreateInput,
   EventPortalEventEntity,
   EventPortalEventSlotCreateInput,
@@ -450,6 +456,12 @@ export function createEventPortalSdk(config?: StrapiSdkConfig) {
       EventPortalContactInfoCreateInput,
       EventPortalContactInfoUpdateInput
     >('/contact-infos'),
+    eforms: sdk.collection<EventPortalEformEntity, EventPortalEformCreateInput, EventPortalEformUpdateInput>('/eforms'),
+    eformSubmissions: sdk.collection<
+      EventPortalEformSubmissionEntity,
+      EventPortalEformSubmissionCreateInput,
+      EventPortalEformSubmissionUpdateInput
+    >('/eform-submissions'),
     eventSlots: sdk.collection<EventPortalEventSlotEntity, EventPortalEventSlotCreateInput, EventPortalEventSlotUpdateInput>('/event-slots'),
     noticeTemplates: sdk.collection<
       EventPortalNoticeTemplateEntity,

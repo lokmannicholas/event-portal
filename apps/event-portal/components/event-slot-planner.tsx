@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { EventDateDTO } from '@event-portal/contracts';
 import type { EventPortalEventSlotPayload } from '../lib/event-portal-types';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 
 type SlotRow = {
   id: string;
@@ -151,7 +152,9 @@ export function EventSlotPlanner(props: {
   initialDraftJson?: string;
   defaultQuota?: number;
   defaultDurationMinutes?: number;
+  language?: PortalLanguage;
 }) {
+  const language = props.language ?? 'en';
   const defaults = buildDefaultRange();
   const initialRows: SlotRow[] = buildRowsFromDraft(props.initialDraftJson) ?? buildRowsFromDates(props.initialDates ?? []);
   const [generateStart, setGenerateStart] = useState(defaults.start);
@@ -160,6 +163,30 @@ export function EventSlotPlanner(props: {
   const [baseQuota, setBaseQuota] = useState(props.defaultQuota ?? 10);
   const [message, setMessage] = useState('');
   const [rows, setRows] = useState<SlotRow[]>(initialRows);
+  const copy = {
+    invalidRange: getPortalText(language, 'Start and end time must be valid ISO timestamps, and end must be later than start.', '開始和結束時間必須是有效的 ISO 時間戳，而且結束時間必須晚於開始時間。'),
+    invalidInterval: getPortalText(language, 'Interval must be greater than zero.', '間隔必須大於零。'),
+    generated: (count: number) =>
+      getPortalText(language, `Generated ${count} timeslots. You can adjust quota per row before saving.`, `已產生 ${count} 個時段。你可在儲存前逐列調整配額。`),
+    noGenerated: getPortalText(language, 'No timeslots were generated.', '未有產生任何時段。'),
+    autoGenerate: getPortalText(language, 'Auto Generate Timeslots', '自動產生時段'),
+    startTime: getPortalText(language, 'Start time (ISO)', '開始時間（ISO）'),
+    endTime: getPortalText(language, 'End time (ISO)', '結束時間（ISO）'),
+    interval: getPortalText(language, 'Interval (minutes)', '間隔（分鐘）'),
+    baseQuota: getPortalText(language, 'Base quota', '基本配額'),
+    helper: getPortalText(language, 'Leave the defaults to generate a quick sample. Each timeslot quota can still be edited individually below.', '保留預設值即可快速產生範例。每個時段的配額仍可於下方逐一修改。'),
+    generate: getPortalText(language, 'Generate', '產生'),
+    listTitle: getPortalText(language, 'Timeslot List', '時段列表'),
+    empty: getPortalText(language, 'No timeslots yet. Generate a range above to build the event schedule.', '目前尚未有時段。請先在上方產生時段範圍以建立活動日程。'),
+    time: getPortalText(language, 'Time', '時間'),
+    quota: getPortalText(language, 'Quota', '配額'),
+    used: getPortalText(language, 'Used', '已用'),
+    held: getPortalText(language, 'Held', '保留中'),
+    remaining: getPortalText(language, 'Remaining', '剩餘'),
+    enabled: getPortalText(language, 'Enabled', '啟用'),
+    remove: getPortalText(language, 'Remove', '移除'),
+    removeTimeslot: (label: string) => getPortalText(language, `Remove timeslot ${label}`, `移除時段 ${label}`),
+  };
 
   useEffect(() => {
     setRows(buildRowsFromDraft(props.initialDraftJson) ?? buildRowsFromDates(props.initialDates ?? []));
@@ -170,12 +197,12 @@ export function EventSlotPlanner(props: {
     const end = generateEnd ? new Date(generateEnd) : new Date(`${defaults.end}:00`);
 
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
-      setMessage('Start and end time must be valid ISO timestamps, and end must be later than start.');
+      setMessage(copy.invalidRange);
       return;
     }
 
     if (intervalMinutes <= 0) {
-      setMessage('Interval must be greater than zero.');
+      setMessage(copy.invalidInterval);
       return;
     }
 
@@ -206,7 +233,7 @@ export function EventSlotPlanner(props: {
     }
 
     setRows(generated);
-    setMessage(generated.length > 0 ? `Generated ${generated.length} timeslots. You can adjust quota per row before saving.` : 'No timeslots were generated.');
+    setMessage(generated.length > 0 ? copy.generated(generated.length) : copy.noGenerated);
   }
 
   function updateRow(id: string, patch: Partial<SlotRow>) {
@@ -246,52 +273,50 @@ export function EventSlotPlanner(props: {
       <input type="hidden" name={props.name ?? 'slotPlanJson'} value={serialized} />
 
       <div className="portal-panel portal-panel-soft">
-        <h3>Auto Generate Timeslots</h3>
+        <h3>{copy.autoGenerate}</h3>
         <div className="portal-field-grid">
           <label className="portal-field">
-            <span className="portal-field-label">Start time (ISO)</span>
+            <span className="portal-field-label">{copy.startTime}</span>
             <input type="datetime-local" value={generateStart} onChange={(event) => setGenerateStart(event.target.value)} />
           </label>
           <label className="portal-field">
-            <span className="portal-field-label">End time (ISO)</span>
+            <span className="portal-field-label">{copy.endTime}</span>
             <input type="datetime-local" value={generateEnd} onChange={(event) => setGenerateEnd(event.target.value)} />
           </label>
           <label className="portal-field">
-            <span className="portal-field-label">Interval (minutes)</span>
+            <span className="portal-field-label">{copy.interval}</span>
             <input type="number" min={5} step={5} value={intervalMinutes} onChange={(event) => setIntervalMinutes(Number(event.target.value))} />
           </label>
           <label className="portal-field">
-            <span className="portal-field-label">Base quota</span>
+            <span className="portal-field-label">{copy.baseQuota}</span>
             <input type="number" min={1} value={baseQuota} onChange={(event) => setBaseQuota(Number(event.target.value))} />
           </label>
         </div>
         <div className="portal-toolbar" style={{ marginTop: '14px' }}>
-          <div className="portal-card-caption">
-            Leave the defaults to generate a quick sample. Each timeslot quota can still be edited individually below.
-          </div>
+          <div className="portal-card-caption">{copy.helper}</div>
           <button type="button" onClick={handleGenerate} className="btn btn-primary">
-            Generate
+            {copy.generate}
           </button>
         </div>
         {message ? <div className="portal-selection-summary" style={{ marginTop: '12px' }}>{message}</div> : null}
       </div>
 
       <div className="portal-table-panel">
-        <h3>Timeslot List</h3>
+        <h3>{copy.listTitle}</h3>
         {rows.length === 0 ? (
-          <div className="portal-card-caption">No timeslots yet. Generate a range above to build the event schedule.</div>
+          <div className="portal-card-caption">{copy.empty}</div>
         ) : (
           <div className="table-responsive">
             <table className="table table-hover">
               <thead>
                 <tr>
-                  <th>Time</th>
-                  <th>Quota</th>
-                  <th>Used</th>
-                  <th>Held</th>
-                  <th>Remaining</th>
-                  <th>Enabled</th>
-                  <th>Remove</th>
+                  <th>{copy.time}</th>
+                  <th>{copy.quota}</th>
+                  <th>{copy.used}</th>
+                  <th>{copy.held}</th>
+                  <th>{copy.remaining}</th>
+                  <th>{copy.enabled}</th>
+                  <th>{copy.remove}</th>
                 </tr>
               </thead>
               <tbody>
@@ -318,8 +343,8 @@ export function EventSlotPlanner(props: {
                         type="button"
                         className="btn btn-outline-secondary"
                         onClick={() => removeRow(row.id)}
-                        aria-label={`Remove timeslot ${formatSlotLabel(row)}`}
-                        title="Remove timeslot"
+                        aria-label={copy.removeTimeslot(formatSlotLabel(row))}
+                        title={copy.remove}
                         style={{ padding: '0.45rem 0.55rem', lineHeight: 0 }}
                       >
                         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">

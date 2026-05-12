@@ -1,4 +1,14 @@
-export type EapRecordKind = 'template' | 'noticeTemplate' | 'event' | 'appointment' | 'partition' | 'group' | 'profile' | 'portalDocument' | 'contactInfo';
+export type EapRecordKind =
+  | 'template'
+  | 'noticeTemplate'
+  | 'event'
+  | 'eform'
+  | 'appointment'
+  | 'partition'
+  | 'group'
+  | 'profile'
+  | 'portalDocument'
+  | 'contactInfo';
 
 export type NoticeQuery = {
   notice?: string;
@@ -29,6 +39,11 @@ export const eapRecordConfig: Record<
     singularLabel: 'Event',
     listTitle: 'Registration Master',
     listPath: '/events',
+  },
+  eform: {
+    singularLabel: 'E-Form',
+    listTitle: 'E-Form Master',
+    listPath: '/eforms',
   },
   appointment: {
     singularLabel: 'Appointment',

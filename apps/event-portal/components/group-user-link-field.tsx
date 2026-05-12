@@ -4,6 +4,7 @@ import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineNotice } from '@event-portal/ui';
 import { createInlineClientUserAction, type CreateInlineClientUserState } from '../app/actions/group-user-actions';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 
 type GroupUserOption = {
   value: string;
@@ -20,6 +21,7 @@ type GroupUserLinkFieldProps = {
   defaultValue?: string[];
   options: GroupUserOption[];
   helperText?: string;
+  language?: PortalLanguage;
 };
 
 const initialCreateState: CreateInlineClientUserState = {
@@ -27,6 +29,33 @@ const initialCreateState: CreateInlineClientUserState = {
 };
 
 export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
+  const language = props.language ?? 'en';
+  const copy = {
+    searchPlaceholder: getPortalText(language, 'Search linked or available users by username or email', '按用戶名稱或電郵搜尋已連結或可選用戶'),
+    searchAria: getPortalText(language, 'Search linked users', '搜尋已連結用戶'),
+    createUser: getPortalText(language, 'Create user', '建立用戶'),
+    selectedSummary: (count: number) =>
+      getPortalText(language, count > 0 ? `${count} users selected` : 'No users selected', count > 0 ? `已選擇 ${count} 位用戶` : '未選擇任何用戶'),
+    linkedUsers: getPortalText(language, 'Linked users', '已連結用戶'),
+    username: getPortalText(language, 'Username', '用戶名稱'),
+    email: getPortalText(language, 'Email', '電郵'),
+    details: getPortalText(language, 'Details', '詳情'),
+    action: getPortalText(language, 'Action', '操作'),
+    remove: getPortalText(language, 'Remove', '移除'),
+    noMatchLinked: getPortalText(language, 'No linked users match the current search.', '沒有已連結用戶符合目前搜尋。'),
+    noLinked: getPortalText(language, 'No linked users selected.', '尚未選擇已連結用戶。'),
+    noMatchingClientUsers: getPortalText(language, 'No matching client users.', '沒有符合的客戶用戶。'),
+    newClientUser: getPortalText(language, 'New client user', '新建立的客戶用戶'),
+    dialogTitle: getPortalText(language, 'Create Client User', '建立客戶用戶'),
+    dialogDescription: getPortalText(language, 'This creates a `CLIENT_HR` user. Save the group form to link the new user to this group.', '此操作會建立 `CLIENT_HR` 用戶。請儲存群組表單，將新用戶連結到此群組。'),
+    close: getPortalText(language, 'Close', '關閉'),
+    createUserNotice: getPortalText(language, 'Create user', '建立用戶'),
+    password: getPortalText(language, 'Password', '密碼'),
+    status: getPortalText(language, 'Status', '狀態'),
+    confirmed: getPortalText(language, 'Confirmed', '已確認'),
+    yes: getPortalText(language, 'Yes', '是'),
+    no: getPortalText(language, 'No', '否'),
+  };
   const [selectedValues, setSelectedValues] = useState<string[]>(props.defaultValue ?? []);
   const [allOptions, setAllOptions] = useState<GroupUserOption[]>(props.options);
   const [query, setQuery] = useState('');
@@ -58,7 +87,7 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
       email: createState.user.email,
       label: `${createState.user.username} · ${createState.user.email}`,
       searchText: `${createState.user.username} ${createState.user.email} CLIENT_HR`,
-      helperText: 'New client user',
+      helperText: copy.newClientUser,
     };
 
     setAllOptions((current) => (current.some((option) => option.value === nextOption.value) ? current : [nextOption, ...current]));
@@ -123,30 +152,30 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search linked or available users by username or email"
-            aria-label="Search linked users"
+            placeholder={copy.searchPlaceholder}
+            aria-label={copy.searchAria}
           />
           <button type="button" className="btn btn-outline-secondary" onClick={() => dialogRef.current?.showModal()}>
-            Create user
+            {copy.createUser}
           </button>
         </div>
 
         <div className="portal-selection-summary">
-          {selectedUsers.length > 0 ? `${selectedUsers.length} users selected` : 'No users selected'}
+          {copy.selectedSummary(selectedUsers.length)}
         </div>
 
         <div className="portal-user-table-card">
-          <div className="portal-user-table-heading">Linked users</div>
+          <div className="portal-user-table-heading">{copy.linkedUsers}</div>
           {selectedUsers.length > 0 ? (
             filteredSelectedUsers.length > 0 ? (
               <div className="table-responsive">
                 <table className="table table-hover">
                   <thead>
                     <tr>
-                      <th>Username</th>
-                      <th>Email</th>
-                      <th>Details</th>
-                      <th>Action</th>
+                      <th>{copy.username}</th>
+                      <th>{copy.email}</th>
+                      <th>{copy.details}</th>
+                      <th>{copy.action}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -157,7 +186,7 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
                         <td>{user.helperText ?? '-'}</td>
                         <td>
                           <button type="button" className="btn btn-outline-secondary" onClick={() => removeUser(user.value)}>
-                            Remove
+                            {copy.remove}
                           </button>
                         </td>
                       </tr>
@@ -166,10 +195,10 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
                 </table>
               </div>
             ) : (
-              <div className="portal-empty-box">No linked users match the current search.</div>
+              <div className="portal-empty-box">{copy.noMatchLinked}</div>
             )
           ) : (
-            <div className="portal-empty-box">No linked users selected.</div>
+            <div className="portal-empty-box">{copy.noLinked}</div>
           )}
         </div>
 
@@ -180,7 +209,7 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
               {option.helperText ? <small>{option.helperText}</small> : null}
             </button>
           ))}
-          {filteredOptions.length === 0 ? <div className="portal-empty-box">No matching client users.</div> : null}
+          {filteredOptions.length === 0 ? <div className="portal-empty-box">{copy.noMatchingClientUsers}</div> : null}
         </div>
       </div>
 
@@ -193,48 +222,48 @@ export function GroupUserLinkField(props: GroupUserLinkFieldProps) {
               <form ref={createFormRef} action={createAction} className="portal-dialog-form">
                 <div className="portal-dialog-header">
                   <div>
-                    <strong>Create Client User</strong>
-                    <p>This creates a `CLIENT_HR` user. Save the group form to link the new user to this group.</p>
+                    <strong>{copy.dialogTitle}</strong>
+                    <p>{copy.dialogDescription}</p>
                   </div>
                   <button type="button" className="btn btn-outline-secondary" onClick={() => dialogRef.current?.close()}>
-                    Close
+                    {copy.close}
                   </button>
                 </div>
 
-                {createState.status === 'error' && createState.message ? <InlineNotice title="Create user">{createState.message}</InlineNotice> : null}
+                {createState.status === 'error' && createState.message ? <InlineNotice title={copy.createUserNotice}>{createState.message}</InlineNotice> : null}
 
                 <div className="portal-dialog-grid">
                   <label className="portal-field">
-                    <span className="portal-field-label">Username</span>
+                    <span className="portal-field-label">{copy.username}</span>
                     <input name="username" autoComplete="username" required />
                   </label>
                   <label className="portal-field">
-                    <span className="portal-field-label">Email</span>
+                    <span className="portal-field-label">{copy.email}</span>
                     <input name="email" type="email" autoComplete="email" required />
                   </label>
                   <label className="portal-field">
-                    <span className="portal-field-label">Password</span>
+                    <span className="portal-field-label">{copy.password}</span>
                     <input name="password" type="password" autoComplete="new-password" />
                   </label>
                   <label className="portal-field">
-                    <span className="portal-field-label">Status</span>
+                    <span className="portal-field-label">{copy.status}</span>
                     <select name="status" defaultValue="ACTIVE">
                       <option value="ACTIVE">ACTIVE</option>
                       <option value="DISABLED">DISABLED</option>
                     </select>
                   </label>
                   <label className="portal-field">
-                    <span className="portal-field-label">Confirmed</span>
+                    <span className="portal-field-label">{copy.confirmed}</span>
                     <select name="confirmed" defaultValue="true">
-                      <option value="true">Yes</option>
-                      <option value="false">No</option>
+                      <option value="true">{copy.yes}</option>
+                      <option value="false">{copy.no}</option>
                     </select>
                   </label>
                 </div>
 
                 <div className="portal-dialog-actions">
                   <button type="submit" className="btn btn-primary">
-                    Create user
+                    {copy.createUser}
                   </button>
                 </div>
               </form>

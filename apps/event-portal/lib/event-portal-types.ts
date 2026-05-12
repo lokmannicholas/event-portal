@@ -57,6 +57,7 @@ export type EventPortalFieldType =
 export type EventPortalNotificationType = 'REGISTRATION' | 'ANNOUNCEMENT' | 'EVENT_UPDATE';
 export type EventPortalNotificationChannel = 'EMAIL' | 'SMS';
 export type EventPortalEventStatus = 'DRAFT' | 'RELEASED' | 'DISABLED' | 'CLOSED';
+export type EventPortalEventAccessType = 'PUBLIC' | 'PRIVATE';
 export type EventPortalTemplateStatus = 'ACTIVE' | 'ARCHIVED';
 export type EventPortalNoticeStatus = 'PENDING' | 'SENT' | 'FAILED';
 export type EventPortalAppointmentStatus = 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
@@ -188,7 +189,10 @@ export interface EventPortalEventTemplateEntity extends StrapiDocumentBase {
   eventTemplateStatus?: EventPortalTemplateStatus;
   userPartitions?: StrapiManyRelation<EventPortalUserPartitionEntity>;
   formFields?: EventPortalFieldConfigComponent[];
+  layoutSettings?: EventPortalJsonValue;
+  customCss?: string;
   events?: StrapiManyRelation<EventPortalEventEntity>;
+  eforms?: StrapiManyRelation<EventPortalEformEntity>;
 }
 
 export interface EventPortalEventEntity extends StrapiDocumentBase {
@@ -202,6 +206,7 @@ export interface EventPortalEventEntity extends StrapiDocumentBase {
   eventDescriptionZh?: string;
   eventNotes?: string;
   eventNotesZh?: string;
+  eventAccessType?: EventPortalEventAccessType;
   eventStatus?: EventPortalEventStatus;
   eventStartDate: string;
   eventEndDate: string;
@@ -211,6 +216,7 @@ export interface EventPortalEventEntity extends StrapiDocumentBase {
   registrationEndDate: string;
   reminderOffsetDays?: number;
   publicSlug?: string;
+  publicUuid?: string;
   publishedToPortals?: boolean;
   showInRegistrationPeriod?: boolean;
   showInEventPeriod?: boolean;
@@ -229,6 +235,49 @@ export interface EventPortalEventEntity extends StrapiDocumentBase {
   appointments?: StrapiManyRelation<EventPortalAppointmentEntity>;
   holds?: StrapiManyRelation<EventPortalAppointmentHoldEntity>;
   auditLogs?: StrapiManyRelation<EventPortalAuditLogEntity>;
+}
+
+export interface EventPortalEformEntity extends StrapiDocumentBase {
+  companyName: string;
+  companyNameZh?: string;
+  location: string;
+  locationZh?: string;
+  eformName: string;
+  eformNameZh?: string;
+  eformDescription?: string;
+  eformDescriptionZh?: string;
+  eformNotes?: string;
+  eformNotesZh?: string;
+  eventAccessType?: EventPortalEventAccessType;
+  eventStatus?: EventPortalEventStatus;
+  eventStartDate: string;
+  eventEndDate: string;
+  publicSlug?: string;
+  publicUuid?: string;
+  publishedToPortals?: boolean;
+  showInEventPeriod?: boolean;
+  showInExpired?: boolean;
+  releasedAt?: string;
+  publicBaseUrl?: string;
+  userPartition?: StrapiOneRelation<EventPortalUserPartitionEntity>;
+  template?: StrapiOneRelation<EventPortalEventTemplateEntity>;
+  submissions?: StrapiManyRelation<EventPortalEformSubmissionEntity>;
+}
+
+export interface EventPortalEformSubmissionEntity extends StrapiDocumentBase {
+  submissionReference: string;
+  participantName?: string;
+  staffNumber?: string;
+  medicalCardNumber?: string;
+  hkidPrefix?: string;
+  registeredEmail?: string;
+  mobileNumber?: string;
+  termsAccepted?: boolean;
+  participantIdentityHash?: string;
+  submittedAt?: string;
+  portalSource?: EventPortalKind;
+  payload?: EventPortalJsonValue;
+  eform?: StrapiOneRelation<EventPortalEformEntity>;
 }
 
 export interface EventPortalNoticeTemplateEntity extends StrapiDocumentBase {
@@ -308,6 +357,7 @@ export interface EventPortalUserPartitionEntity extends StrapiDocumentBase {
   banners?: Array<StrapiUploadFile | StrapiDocumentIdentity>;
   userGroup?: StrapiOneRelation<EventPortalUserGroupEntity>;
   events?: StrapiManyRelation<EventPortalEventEntity>;
+  eforms?: StrapiManyRelation<EventPortalEformEntity>;
   template?: StrapiOneRelation<EventPortalEventTemplateEntity>;
   portalDocuments?: StrapiManyRelation<EventPortalPortalDocumentEntity>;
   contactInfos?: StrapiManyRelation<EventPortalContactInfoEntity>;
@@ -437,7 +487,10 @@ export interface EventPortalEventTemplateCreateInput {
   eventTemplateStatus?: EventPortalTemplateStatus;
   userPartitions?: StrapiManyRelationInput;
   formFields?: EventPortalFieldConfigComponent[];
+  layoutSettings?: EventPortalJsonValue;
+  customCss?: string;
   events?: StrapiManyRelationInput;
+  eforms?: StrapiManyRelationInput;
 }
 
 export type EventPortalEventTemplateUpdateInput = Partial<EventPortalEventTemplateCreateInput>;
@@ -453,6 +506,7 @@ export interface EventPortalEventCreateInput {
   eventDescriptionZh?: string;
   eventNotes?: string;
   eventNotesZh?: string;
+  eventAccessType?: EventPortalEventAccessType;
   eventStatus?: EventPortalEventStatus;
   eventStartDate: string;
   eventEndDate: string;
@@ -462,6 +516,7 @@ export interface EventPortalEventCreateInput {
   registrationEndDate: string;
   reminderOffsetDays?: number;
   publicSlug?: string;
+  publicUuid?: string;
   publishedToPortals?: boolean;
   showInRegistrationPeriod?: boolean;
   showInEventPeriod?: boolean;
@@ -484,6 +539,53 @@ export interface EventPortalEventCreateInput {
 }
 
 export type EventPortalEventUpdateInput = Partial<EventPortalEventCreateInput>;
+
+export interface EventPortalEformCreateInput {
+  companyName: string;
+  companyNameZh?: string;
+  location: string;
+  locationZh?: string;
+  eformName: string;
+  eformNameZh?: string;
+  eformDescription?: string;
+  eformDescriptionZh?: string;
+  eformNotes?: string;
+  eformNotesZh?: string;
+  eventAccessType?: EventPortalEventAccessType;
+  eventStatus?: EventPortalEventStatus;
+  eventStartDate: string;
+  eventEndDate: string;
+  publicSlug?: string;
+  publicUuid?: string;
+  publishedToPortals?: boolean;
+  showInEventPeriod?: boolean;
+  showInExpired?: boolean;
+  releasedAt?: string;
+  publicBaseUrl?: string;
+  userPartition?: StrapiRelationInput;
+  template?: StrapiRelationInput;
+  submissions?: StrapiManyRelationInput;
+}
+
+export type EventPortalEformUpdateInput = Partial<EventPortalEformCreateInput>;
+
+export interface EventPortalEformSubmissionCreateInput {
+  submissionReference: string;
+  participantName?: string;
+  staffNumber?: string;
+  medicalCardNumber?: string;
+  hkidPrefix?: string;
+  registeredEmail?: string;
+  mobileNumber?: string;
+  termsAccepted?: boolean;
+  participantIdentityHash?: string;
+  submittedAt?: string;
+  portalSource?: EventPortalKind;
+  payload?: EventPortalJsonValue;
+  eform?: StrapiRelationInput;
+}
+
+export type EventPortalEformSubmissionUpdateInput = Partial<EventPortalEformSubmissionCreateInput>;
 
 export interface EventPortalNoticeTemplateCreateInput {
   name: string;
@@ -593,6 +695,7 @@ export interface EventPortalUserPartitionCreateInput {
   banners?: StrapiManyMediaInput;
   userGroup?: StrapiRelationInput;
   events?: StrapiManyRelationInput;
+  eforms?: StrapiManyRelationInput;
   template?: StrapiRelationInput;
   portalDocuments?: StrapiManyRelationInput;
   contactInfos?: StrapiManyRelationInput;

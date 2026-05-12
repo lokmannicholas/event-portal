@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 import { useState } from 'react';
 import type { FieldType, FormFieldConfigDTO } from '@event-portal/contracts';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 
 type EditableTemplateField = {
   id: string;
@@ -90,7 +91,31 @@ function parseDraftFields(value: string | undefined) {
   }
 }
 
-export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfigDTO[]; initialFieldsJson?: string }) {
+export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfigDTO[]; initialFieldsJson?: string; language?: PortalLanguage }) {
+  const language = props.language ?? 'en';
+  const copy = {
+    mandatoryField: getPortalText(language, 'Mandatory field', '必填欄位'),
+    registrationField: getPortalText(language, 'Registration field', '登記欄位'),
+    mandatoryHelper: getPortalText(language, 'Managed in Strapi and always enabled for ERP.', '由 Strapi 管理，並會一直於 ERP 啟用。'),
+    editableHelper: getPortalText(language, 'Editable template field stored in formFields.', '可編輯的模板欄位，儲存在 formFields。'),
+    remove: getPortalText(language, 'Remove', '移除'),
+    enabledInErp: getPortalText(language, 'Enabled in ERP', '於 ERP 啟用'),
+    visible: getPortalText(language, 'Visible', '顯示'),
+    hidden: getPortalText(language, 'Hidden', '隱藏'),
+    required: getPortalText(language, 'Required', '必填'),
+    requiredState: getPortalText(language, 'Required', '必填'),
+    optionalState: getPortalText(language, 'Optional', '選填'),
+    sortOrder: getPortalText(language, 'Sort order', '排序'),
+    fieldKey: getPortalText(language, 'Field key', '欄位鍵值'),
+    labelEn: getPortalText(language, 'Label (EN)', '標籤（英文）'),
+    labelZh: getPortalText(language, 'Label (ZH)', '標籤（中文）'),
+    fieldType: getPortalText(language, 'Field type', '欄位類型'),
+    placeholderEn: getPortalText(language, 'Placeholder (EN)', '提示文字（英文）'),
+    placeholderZh: getPortalText(language, 'Placeholder (ZH)', '提示文字（中文）'),
+    options: getPortalText(language, 'Options', '選項'),
+    optionsPlaceholder: getPortalText(language, 'One option per line', '每行一個選項'),
+    addField: getPortalText(language, 'Add field', '新增欄位'),
+  };
   const initialEditorFields: EditableTemplateField[] = parseDraftFields(props.initialFieldsJson) ?? props.initialFields.map(toEditableField);
   const [fields, setFields] = useState<EditableTemplateField[]>(initialEditorFields);
 
@@ -139,21 +164,21 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
           <div key={field.id} className={`portal-builder-card${field.isSystem ? ' is-system' : ''}`}>
             <div className="portal-builder-header">
               <div>
-                <div className="portal-builder-title">{field.isSystem ? 'Mandatory field' : 'Registration field'}</div>
+                <div className="portal-builder-title">{field.isSystem ? copy.mandatoryField : copy.registrationField}</div>
                 <div className="portal-inline-caption">
-                  {field.isSystem ? 'Managed in Strapi and always enabled for ERP.' : 'Editable template field stored in formFields.'}
+                  {field.isSystem ? copy.mandatoryHelper : copy.editableHelper}
                 </div>
               </div>
               {!field.isSystem ? (
                 <button type="button" onClick={() => removeField(field.id)} className="btn-danger-link">
-                  Remove
+                  {copy.remove}
                 </button>
               ) : null}
             </div>
 
             <div className="portal-builder-grid">
               <label className="portal-toggle-field">
-                <span className="portal-field-label">Enabled in ERP</span>
+                <span className="portal-field-label">{copy.enabledInErp}</span>
                 <span className="portal-checkbox-row">
                   <input
                     type="checkbox"
@@ -161,12 +186,12 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
                     disabled={field.isSystem}
                     onChange={(event) => updateField(field.id, (current) => ({ ...current, enabled: event.target.checked }))}
                   />
-                  <span>{field.enabled ? 'Visible' : 'Hidden'}</span>
+                  <span>{field.enabled ? copy.visible : copy.hidden}</span>
                 </span>
               </label>
 
               <label className="portal-toggle-field">
-                <span className="portal-field-label">Required</span>
+                <span className="portal-field-label">{copy.required}</span>
                 <span className="portal-checkbox-row">
                   <input
                     type="checkbox"
@@ -174,12 +199,12 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
                     disabled={field.isSystem}
                     onChange={(event) => updateField(field.id, (current) => ({ ...current, required: event.target.checked }))}
                   />
-                  <span>{field.required ? 'Required' : 'Optional'}</span>
+                  <span>{field.required ? copy.requiredState : copy.optionalState}</span>
                 </span>
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Sort order</span>
+                <span className="portal-field-label">{copy.sortOrder}</span>
                 <input
                   type="number"
                   value={field.sortOrder}
@@ -189,7 +214,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Field key</span>
+                <span className="portal-field-label">{copy.fieldKey}</span>
                 <input
                   value={field.fieldKey}
                   disabled={field.isSystem}
@@ -199,7 +224,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Label (EN)</span>
+                <span className="portal-field-label">{copy.labelEn}</span>
                 <input
                   value={field.labelEn}
                   disabled={field.isSystem}
@@ -208,7 +233,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Label (ZH)</span>
+                <span className="portal-field-label">{copy.labelZh}</span>
                 <input
                   value={field.labelZh}
                   disabled={field.isSystem}
@@ -217,7 +242,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Field type</span>
+                <span className="portal-field-label">{copy.fieldType}</span>
                 <select
                   value={field.fieldType}
                   disabled={field.isSystem}
@@ -232,7 +257,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Placeholder (EN)</span>
+                <span className="portal-field-label">{copy.placeholderEn}</span>
                 <input
                   value={field.placeholderEn}
                   disabled={field.isSystem}
@@ -241,7 +266,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
               </label>
 
               <label className="portal-field">
-                <span className="portal-field-label">Placeholder (ZH)</span>
+                <span className="portal-field-label">{copy.placeholderZh}</span>
                 <input
                   value={field.placeholderZh}
                   disabled={field.isSystem}
@@ -252,13 +277,13 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
 
             {needsOptions ? (
               <label className="portal-field-full" style={{ marginTop: '12px' }}>
-                <span className="portal-field-label">Options</span>
+                <span className="portal-field-label">{copy.options}</span>
                 <textarea
                   value={field.optionsText}
                   disabled={field.isSystem}
                   onChange={(event) => updateField(field.id, (current) => ({ ...current, optionsText: event.target.value }))}
                   rows={4}
-                  placeholder={'One option per line'}
+                  placeholder={copy.optionsPlaceholder}
                 />
               </label>
             ) : null}
@@ -268,7 +293,7 @@ export function TemplateFormFieldsEditor(props: { initialFields: FormFieldConfig
 
       <div>
         <button type="button" onClick={addField} className="btn btn-outline-secondary">
-          Add field
+          {copy.addField}
         </button>
       </div>
     </div>

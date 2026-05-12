@@ -155,6 +155,10 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     ctx.body = await strapi.service('plugin::event-portal.portal').erpEventDetail(ctx.params.documentId, String(ctx.query.partitionCode ?? ''));
   },
 
+  async erpEformDetail(ctx: any) {
+    ctx.body = await strapi.service('plugin::event-portal.portal').erpEformDetail(ctx.params.documentId, String(ctx.query.partitionCode ?? ''));
+  },
+
   async erpDocuments(ctx: any) {
     ctx.body = await strapi.service('plugin::event-portal.portal').portalDocuments('ERP');
   },
@@ -169,6 +173,10 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
   async createBooking(ctx: any) {
     ctx.body = await strapi.service('plugin::event-portal.portal').createBooking(ctx.request.body as any);
+  },
+
+  async createEformSubmission(ctx: any) {
+    ctx.body = await strapi.service('plugin::event-portal.portal').createEformSubmission(ctx.request.body as any);
   },
 
   async createEnquiry(ctx: any) {

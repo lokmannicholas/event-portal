@@ -136,7 +136,7 @@ SendGrid email defaults and SMS sender defaults can be overridden from the Strap
 
 - Group-scoped client users enter through paths such as `/ecp/HSBC-HR`.
 - The public partition landing route is `/p/[partitionCode]`.
-- The public event detail route is `/p/[partitionCode]/e/[eventCode]`.
+- The public event detail route is `/e/public/[eventUuid]` or `/e/private/[eventUuid]`.
 - Non-auth Strapi requests from EAP use `Authorization: Bearer <jwt>` from the signed login session cookie.
 - If there is no signed portal session yet, EAP falls back to `STRAPI_API_TOKEN` or `STRAPI_READ_TOKEN` when available.
 - `POST /api/auth/local` is the one login path that does not send the API token.

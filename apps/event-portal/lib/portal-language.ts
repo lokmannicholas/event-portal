@@ -31,6 +31,14 @@ export function resolvePortalLanguage(value?: string | null): PortalLanguage {
   return parsePortalLanguage(value) ?? 'zh-Hant';
 }
 
+export function isPortalLanguageZh(language: PortalLanguage) {
+  return language === 'zh-Hant';
+}
+
+export function getPortalText<T>(language: PortalLanguage, english: T, traditionalChinese: T) {
+  return isPortalLanguageZh(language) ? traditionalChinese : english;
+}
+
 export function getPortalLanguageFromSearchParams(searchParams?: Record<string, SearchParamValue>) {
   return resolvePortalLanguage(firstSearchParamValue(searchParams?.[PORTAL_LANGUAGE_QUERY_PARAM]));
 }

@@ -55,6 +55,15 @@ export default async function Page({ searchParams }: PageProps) {
               <FormGrid>
                 <Field label="Event name" name="eventName" defaultValue={draft?.eventName} required />
                 <Field label="Event code" name="eventCode" defaultValue={draft?.eventCode} required />
+                <SelectField
+                  label="ERP URL type"
+                  name="accessType"
+                  defaultValue={draft?.accessType ?? 'PUBLIC'}
+                  options={[
+                    { value: 'PUBLIC', label: 'Public · /e/public/{uuid}' },
+                    { value: 'PRIVATE', label: 'Private · /e/private/{uuid}' },
+                  ]}
+                />
                 <Field label="Company" name="companyName" defaultValue={draft?.companyName} required />
                 <Field label="Location" name="location" defaultValue={draft?.location} required />
                 <SelectField

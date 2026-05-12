@@ -25,8 +25,8 @@ export async function ErpShell(props: {
     publicNavAriaLabel: isZh ? '入口導覽' : 'Portal navigation',
     publicAccessTitle: isZh ? '公開存取' : 'Public access',
     publicAccessBody: isZh
-      ? 'ERP 為公開分區入口。使用者可透過 `/p/HSBC-FLU` 進入，並於 `/p/HSBC-FLU/e/2026-flu-vaccination` 開啟活動。'
-      : 'ERP is public and partition-based. Users enter through `/p/HSBC-FLU` and open events through `/p/HSBC-FLU/e/2026-flu-vaccination`.',
+      ? 'ERP 活動連結可設定為公開或私人路徑，例如 `/e/public/550e8400-e29b-41d4-a716-446655440000` 或 `/e/private/550e8400-e29b-41d4-a716-446655440000`。'
+      : 'ERP event links can be configured as public or private paths, for example `/e/public/550e8400-e29b-41d4-a716-446655440000` or `/e/private/550e8400-e29b-41d4-a716-446655440000`.',
     languageSwitcherLabel: isZh ? '切換語言' : 'Change language',
   };
 
@@ -37,6 +37,7 @@ export async function ErpShell(props: {
       title={props.title}
       subtitle={props.subtitle}
       nav={buildErpNav(props.partitionCode, props.language)}
+      language={props.language}
       brandImageSrc={brandImageSrc}
       brandImageAlt={brandImageAlt}
       headerCaption={headerCaption}

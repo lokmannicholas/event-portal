@@ -1,4 +1,4 @@
-import type { EventListItemDTO, FormFieldConfigDTO } from '@event-portal/contracts';
+import type { EformListItemDTO, EventListItemDTO, FormFieldConfigDTO } from '@event-portal/contracts';
 import {
   PORTAL_LANGUAGE_QUERY_PARAM,
   getPortalLanguageFromSearchParams,
@@ -65,6 +65,27 @@ export function getLocalizedNotes(
   language: ErpLanguage,
 ) {
   return getLocalizedText(language, event.notes, event.notesZh);
+}
+
+export function getLocalizedEformName(
+  eform: Pick<EformListItemDTO, 'eformName' | 'eformNameZh'>,
+  language: ErpLanguage,
+) {
+  return getLocalizedText(language, eform.eformName, eform.eformNameZh);
+}
+
+export function getLocalizedEformDescription(
+  eform: Pick<EformListItemDTO, 'description' | 'descriptionZh'>,
+  language: ErpLanguage,
+) {
+  return getLocalizedText(language, eform.description, eform.descriptionZh);
+}
+
+export function getLocalizedEformNotes(
+  eform: Pick<EformListItemDTO, 'notes' | 'notesZh'>,
+  language: ErpLanguage,
+) {
+  return getLocalizedText(language, eform.notes, eform.notesZh);
 }
 
 export function getLocalizedFieldLabel(

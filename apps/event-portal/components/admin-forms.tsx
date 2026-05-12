@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { InlineNotice } from '@event-portal/ui';
 import { getNoticeContent } from '../lib/eap-records';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 import { ChipMultiSelectField } from './chip-multi-select-field';
 
 export function ActionRow(props: { children?: ReactNode }) {
@@ -94,17 +95,19 @@ export function SelectField(props: {
   defaultValue?: string;
   required?: boolean;
   options: Array<{ value: string; label: string }>;
+  language?: PortalLanguage;
 }) {
   const hasMatchingOption = typeof props.defaultValue === 'string' && props.options.some((option) => option.value === props.defaultValue);
   const normalizedDefaultValue = hasMatchingOption ? props.defaultValue : '';
   const hasEmptyOption = props.options.some((option) => option.value === '');
   const includeEmptyOption = !hasEmptyOption && (!props.required || normalizedDefaultValue === '');
+  const language = props.language ?? 'en';
 
   return (
     <label className="portal-field">
       <span className="portal-field-label">{props.label}</span>
       <select name={props.name} defaultValue={normalizedDefaultValue} required={props.required}>
-        {includeEmptyOption ? <option value="">{props.required ? 'Please select' : 'Not selected'}</option> : null}
+        {includeEmptyOption ? <option value="">{props.required ? getPortalText(language, 'Please select', '請選擇') : getPortalText(language, 'Not selected', '未選擇')}</option> : null}
         {props.options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -122,18 +125,20 @@ export function BooleanButtonField(props: {
   trueLabel?: string;
   falseLabel?: string;
   helperText?: string;
+  language?: PortalLanguage;
 }) {
+  const language = props.language ?? 'en';
   return (
     <fieldset className="portal-field portal-boolean-field">
       <legend className="portal-field-label">{props.label}</legend>
       <div className="portal-boolean-button-row">
         <label className="portal-boolean-button">
           <input name={props.name} type="radio" value="true" defaultChecked={props.defaultValue === true} />
-          <span>{props.trueLabel ?? 'Yes'}</span>
+          <span>{props.trueLabel ?? getPortalText(language, 'Yes', '是')}</span>
         </label>
         <label className="portal-boolean-button">
           <input name={props.name} type="radio" value="false" defaultChecked={props.defaultValue === false} />
-          <span>{props.falseLabel ?? 'No'}</span>
+          <span>{props.falseLabel ?? getPortalText(language, 'No', '否')}</span>
         </label>
       </div>
       {props.helperText ? <p className="portal-helper-text">{props.helperText}</p> : null}

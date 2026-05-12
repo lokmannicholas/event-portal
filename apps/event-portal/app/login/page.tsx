@@ -1,23 +1,25 @@
 import { Card, InlineNotice, Stack } from '@event-portal/ui';
 import { EapShell } from '../../components/eap-shell';
 import { EapLoginForm } from './eap-login-form';
+import { getPortalText } from '../../lib/portal-language';
+import { getPortalLanguageFromCookies } from '../../lib/portal-language.server';
 
 type PageProps = {
   searchParams?: Promise<{ reason?: string }>;
 };
 
-function getReasonMessage(reason?: string) {
+function getReasonMessage(reason: string | undefined, language: 'en' | 'zh-Hant') {
   switch (reason) {
     case 'auth-required':
-      return 'Please sign in before opening EAP.';
+      return getPortalText(language, 'Please sign in before opening EAP.', '請先登入後再開啟 EAP。');
     case 'missing-credentials':
-      return 'Enter both your email or username and password.';
+      return getPortalText(language, 'Enter both your email or username and password.', '請輸入你的電郵或用戶名稱，以及密碼。');
     case 'invalid-credentials':
-      return 'The submitted Strapi login credentials are invalid.';
+      return getPortalText(language, 'The submitted Strapi login credentials are invalid.', '提交的 Strapi 登入資料無效。');
     case 'access-denied':
-      return 'Only active Strapi users with portalRole ADMIN can open EAP.';
+      return getPortalText(language, 'Only active Strapi users with portalRole ADMIN can open EAP.', '只有 portalRole 為 ADMIN 的啟用 Strapi 用戶可開啟 EAP。');
     case 'logged-out':
-      return 'You have been signed out.';
+      return getPortalText(language, 'You have been signed out.', '你已登出。');
     default:
       return undefined;
   }
@@ -25,22 +27,38 @@ function getReasonMessage(reason?: string) {
 
 export default async function Page({ searchParams }: PageProps) {
   const query = await searchParams;
+  const language = await getPortalLanguageFromCookies();
+  const copy = {
+    title: getPortalText(language, 'Login', '登入'),
+    subtitle: getPortalText(
+      language,
+      'Sign in with a Strapi users-permissions account configured with portalRole ADMIN before opening the admin portal.',
+      '進入管理入口前，請先使用已設定 portalRole ADMIN 的 Strapi users-permissions 帳戶登入。',
+    ),
+    accessStatus: getPortalText(language, 'Access status', '存取狀態'),
+    signIn: getPortalText(language, 'Sign in', '登入'),
+    description: getPortalText(
+      language,
+      'This login calls Strapi `/api/auth/local` from the browser using `NEXT_PUBLIC_STRAPI_URL`, then establishes the EAP session only for active users whose `portalRole=ADMIN`.',
+      '此登入流程會在瀏覽器內透過 `NEXT_PUBLIC_STRAPI_URL` 呼叫 Strapi `/api/auth/local`，然後只為 `portalRole=ADMIN` 的啟用用戶建立 EAP 工作階段。',
+    ),
+  };
 
-  const message = getReasonMessage(query?.reason);
+  const message = getReasonMessage(query?.reason, language);
 
   return (
     <EapShell
-      title="Login"
-      subtitle="Sign in with a Strapi users-permissions account configured with portalRole ADMIN before opening the admin portal."
+      title={copy.title}
+      subtitle={copy.subtitle}
       requireAuth={false}
       hideNav
       hideAside
     >
       <Stack>
-        {message ? <InlineNotice title="Access status">{message}</InlineNotice> : null}
+        {message ? <InlineNotice title={copy.accessStatus}>{message}</InlineNotice> : null}
 
-        <Card title="Sign in" description="This login calls Strapi `/api/auth/local` from the browser using `NEXT_PUBLIC_STRAPI_URL`, then establishes the EAP session only for active users whose `portalRole=ADMIN`.">
-          <EapLoginForm initialMessage={message} />
+        <Card title={copy.signIn} description={copy.description}>
+          <EapLoginForm initialMessage={message} language={language} />
         </Card>
       </Stack>
     </EapShell>

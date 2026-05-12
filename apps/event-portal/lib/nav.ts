@@ -17,6 +17,7 @@ export function buildEapNav(language: PortalLanguage): NavItem[] {
       label: isZh ? '活動管理' : 'Event Management',
       items: [
         { href: withPortalLanguage('/events', language), label: isZh ? '活動' : 'Registration Master' },
+        { href: withPortalLanguage('/eforms', language), label: isZh ? '電子表格' : 'E-Form Master' },
         { href: withPortalLanguage('/appointments', language), label: isZh ? '預約' : 'Appointment Master' },
       ],
     },

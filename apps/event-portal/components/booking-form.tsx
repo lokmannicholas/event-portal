@@ -15,6 +15,7 @@ import {
   type ErpLanguage,
   isTraditionalChinese,
 } from '../lib/erp-language';
+import { resolveTemplateLayoutSettings } from '../lib/template-layout';
 
 type SlotOption = {
   documentId: string;
@@ -26,6 +27,52 @@ type SlotOption = {
 };
 
 type StatusTone = 'info' | 'warning' | 'success' | 'danger';
+
+function getBookingThemeStyles(colors: {
+  pageBackground?: string;
+  surfaceBackground?: string;
+  surfaceBorderColor?: string;
+  accentColor?: string;
+  headingColor?: string;
+  bodyTextColor?: string;
+  fieldBackground?: string;
+  fieldBorderColor?: string;
+  buttonBackground?: string;
+  buttonTextColor?: string;
+}) {
+  return {
+    flow: {
+      background: colors.pageBackground,
+      color: colors.bodyTextColor,
+    },
+    surface: {
+      background: colors.surfaceBackground,
+      borderColor: colors.surfaceBorderColor,
+      color: colors.bodyTextColor,
+    },
+    heading: {
+      color: colors.headingColor,
+    },
+    accent: {
+      color: colors.accentColor,
+    },
+    field: {
+      background: colors.fieldBackground,
+      borderColor: colors.fieldBorderColor,
+      color: colors.bodyTextColor,
+    },
+    primaryButton: {
+      background: colors.buttonBackground,
+      borderColor: colors.buttonBackground,
+      color: colors.buttonTextColor,
+    },
+    secondaryButton: {
+      background: colors.surfaceBackground,
+      borderColor: colors.fieldBorderColor ?? colors.surfaceBorderColor,
+      color: colors.headingColor ?? colors.bodyTextColor,
+    },
+  } as const;
+}
 
 function formatRemaining(seconds: number) {
   const safeSeconds = Math.max(seconds, 0);
@@ -134,6 +181,11 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
         .sort((left, right) => left.sortOrder - right.sortOrder),
     [props.detail.event.fields],
   );
+  const resolvedLayout = useMemo(
+    () => resolveTemplateLayoutSettings(registerFields.map((field) => field.fieldKey), props.detail.event.layoutSettings),
+    [props.detail.event.layoutSettings, registerFields],
+  );
+  const themeStyles = getBookingThemeStyles(resolvedLayout.colors);
   const initialFieldValues = Object.fromEntries(registerFields.map((field) => [field.fieldKey, ''])) as Record<string, string>;
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(initialFieldValues);
   const [communicationPreference, setCommunicationPreference] = useState<'EMAIL' | 'SMS'>('EMAIL');
@@ -154,12 +206,22 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
       })),
     [props.detail.event.dates],
   );
-  const layoutColumns =
-    props.detail.event.layoutMode === 'SPLIT'
-      ? 'minmax(260px, 1.2fr) minmax(260px, 1fr)'
-      : props.detail.event.layoutMode === 'SINGLE_COLUMN'
-        ? '1fr'
-        : 'repeat(auto-fit, minmax(220px, 1fr))';
+  const fieldByKey = new Map(registerFields.map((field) => [field.fieldKey, field]));
+  const leftColumnFields = resolvedLayout.fieldPositions
+    .filter((position) => position.column === 'left')
+    .map((position) => fieldByKey.get(position.fieldKey))
+    .filter((field): field is (typeof registerFields)[number] => Boolean(field));
+  const rightColumnFields = resolvedLayout.fieldPositions
+    .filter((position) => position.column === 'right')
+    .map((position) => fieldByKey.get(position.fieldKey))
+    .filter((field): field is (typeof registerFields)[number] => Boolean(field));
+  const fullWidthFields = resolvedLayout.fieldPositions
+    .filter((position) => position.column === 'full')
+    .map((position) => fieldByKey.get(position.fieldKey))
+    .filter((field): field is (typeof registerFields)[number] => Boolean(field));
+  const stackedFields = leftColumnFields.length > 0 && rightColumnFields.length > 0 ? [] : [...leftColumnFields, ...rightColumnFields];
+  const titleAlignment = resolvedLayout.titlePosition;
+  const layoutColumns = leftColumnFields.length > 0 && rightColumnFields.length > 0 ? 'repeat(2, minmax(0, 1fr))' : '1fr';
   const detailSummaryItems = [
     { label: copy.eventNameLabel, value: eventName },
     { label: copy.locationLabel, value: location },
@@ -224,6 +286,126 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
       .split('|')
       .map((value) => value.trim())
       .filter(Boolean);
+  }
+
+  function renderFieldInput(field: (typeof registerFields)[number]) {
+    if (field.fieldType === 'TEXTAREA') {
+      return (
+        <textarea
+          value={getFieldValue(field.fieldKey)}
+          onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
+          required={field.required}
+          placeholder={getLocalizedFieldPlaceholder(field, props.language)}
+          rows={4}
+          style={themeStyles.field}
+        />
+      );
+    }
+
+    if (field.fieldType === 'CHECKBOX') {
+      if (field.options && field.options.length > 0) {
+        return (
+          <div className="erp-booking-choice-list">
+            {field.options.map((option) => {
+              const checked = getCheckboxValues(field.fieldKey).includes(option);
+
+              return (
+                <label key={option} className="erp-booking-choice-item" style={themeStyles.field}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(event) => toggleCheckboxValue(field.fieldKey, option, event.target.checked)}
+                  />
+                  <span>{option}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      }
+
+      return (
+        <label className="erp-booking-choice-item" style={themeStyles.field}>
+          <input
+            type="checkbox"
+            checked={getFieldValue(field.fieldKey) === 'true'}
+            onChange={(event) => setFieldValue(field.fieldKey, event.target.checked ? 'true' : '')}
+          />
+          <span>{getLocalizedFieldLabel(field, props.language)}</span>
+        </label>
+      );
+    }
+
+    if (field.fieldType === 'RADIO') {
+      return (
+        <div className="erp-booking-choice-list">
+          {(field.options ?? []).map((option) => (
+            <label key={option} className="erp-booking-choice-item" style={themeStyles.field}>
+              <input
+                type="radio"
+                name={field.fieldKey}
+                value={option}
+                checked={getFieldValue(field.fieldKey) === option}
+                onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
+                required={field.required}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    if (field.fieldType === 'SELECT') {
+      return (
+        <select
+          value={getFieldValue(field.fieldKey)}
+          onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
+          required={field.required}
+          style={themeStyles.field}
+        >
+          <option value="">{copy.selectPlaceholder}</option>
+          {(field.options ?? []).map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    return (
+      <input
+        type={
+          field.fieldType === 'EMAIL'
+            ? 'email'
+            : field.fieldType === 'NUMBER'
+              ? 'number'
+              : field.fieldType === 'DATE'
+                ? 'date'
+                : field.fieldType === 'MOBILE'
+                  ? 'tel'
+                  : 'text'
+        }
+        value={getFieldValue(field.fieldKey)}
+        onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
+        required={field.required}
+        placeholder={getLocalizedFieldPlaceholder(field, props.language)}
+        style={themeStyles.field}
+      />
+    );
+  }
+
+  function renderFieldCard(field: (typeof registerFields)[number]) {
+    return (
+      <div key={field.fieldKey} className="erp-booking-field" style={themeStyles.surface}>
+        <div className="erp-booking-field-label" style={themeStyles.heading}>
+          {getLocalizedFieldLabel(field, props.language)}
+          {field.required ? <span>*</span> : null}
+        </div>
+        {renderFieldInput(field)}
+      </div>
+    );
   }
 
   function getMappedValue(fieldKey: string, fallback = '') {
@@ -336,32 +518,32 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
 
   if (submittedReference) {
     return (
-      <div className="erp-booking-flow">
+      <div className="erp-booking-flow" style={themeStyles.flow}>
         {props.detail.event.customCss ? <style>{props.detail.event.customCss}</style> : null}
 
-        <section className="erp-booking-banner">
-          <div className="erp-booking-banner-copy">
-            <span className="erp-booking-kicker">{copy.bookingKicker}</span>
-            <h2>{copy.confirmationTitle}</h2>
+        <section className="erp-booking-banner" style={themeStyles.surface}>
+          <div className="erp-booking-banner-copy" style={{ textAlign: titleAlignment }}>
+            <span className="erp-booking-kicker" style={themeStyles.accent}>{copy.bookingKicker}</span>
+            <h2 style={themeStyles.heading}>{copy.confirmationTitle}</h2>
             <p>{copy.confirmationDescription}</p>
           </div>
           <div className="erp-booking-summary-grid">
-            <div className="erp-booking-summary-card is-highlighted">
+            <div className="erp-booking-summary-card is-highlighted" style={themeStyles.surface}>
               <span>{copy.bookingReferenceLabel}</span>
-              <strong>{submittedReference}</strong>
+              <strong style={themeStyles.heading}>{submittedReference}</strong>
             </div>
-            <div className="erp-booking-summary-card">
+            <div className="erp-booking-summary-card" style={themeStyles.surface}>
               <span>{copy.appointmentLabel}</span>
-              <strong>{selectedSlot ? `${formatDisplayDate(selectedSlot.date, props.language)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : eventName}</strong>
+              <strong style={themeStyles.heading}>{selectedSlot ? `${formatDisplayDate(selectedSlot.date, props.language)} ${selectedSlot.startTime}-${selectedSlot.endTime}` : eventName}</strong>
             </div>
-            <div className="erp-booking-summary-card">
+            <div className="erp-booking-summary-card" style={themeStyles.surface}>
               <span>{copy.communicationLabel}</span>
-              <strong>{communicationPreference === 'EMAIL' ? 'Email' : 'SMS'}</strong>
+              <strong style={themeStyles.heading}>{communicationPreference === 'EMAIL' ? (isZh ? '電郵' : 'Email') : 'SMS'}</strong>
             </div>
           </div>
         </section>
 
-        <section className="erp-booking-shell">
+        <section className="erp-booking-shell" style={themeStyles.surface}>
           {status ? (
             <div className={`erp-booking-status is-${status.tone}`}>
               <span className="erp-booking-status-dot" aria-hidden="true" />
@@ -370,8 +552,8 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
           ) : null}
 
           <div className="erp-booking-review-grid">
-            <div className="erp-booking-review-card">
-              <h3>{copy.bookingDetailsTitle}</h3>
+            <div className="erp-booking-review-card" style={themeStyles.surface}>
+              <h3 style={themeStyles.heading}>{copy.bookingDetailsTitle}</h3>
               <dl>
                 <div>
                   <dt>{copy.eventNameLabel}</dt>
@@ -388,8 +570,8 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
               </dl>
             </div>
 
-            <div className="erp-booking-review-card">
-              <h3>{copy.registrationDetailsTitle}</h3>
+            <div className="erp-booking-review-card" style={themeStyles.surface}>
+              <h3 style={themeStyles.heading}>{copy.registrationDetailsTitle}</h3>
               <dl>
                 {reviewFields.map((field) => (
                   <div key={field.label}>
@@ -406,20 +588,20 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
   }
 
   return (
-    <div className="erp-booking-flow">
+    <div className="erp-booking-flow" style={themeStyles.flow}>
       {props.detail.event.customCss ? <style>{props.detail.event.customCss}</style> : null}
 
-      <section className="erp-booking-banner">
-        <div className="erp-booking-banner-copy">
-          <span className="erp-booking-kicker">{copy.bookingKicker}</span>
-          <h2>{copy.bookingTitle}</h2>
+      <section className="erp-booking-banner" style={themeStyles.surface}>
+        <div className="erp-booking-banner-copy" style={{ textAlign: titleAlignment }}>
+          <span className="erp-booking-kicker" style={themeStyles.accent}>{copy.bookingKicker}</span>
+          <h2 style={themeStyles.heading}>{copy.bookingTitle}</h2>
           <p>{copy.bookingDescription}</p>
         </div>
         <div className="erp-booking-summary-grid">
           {detailSummaryItems.map((item) => (
-            <div key={item.label} className="erp-booking-summary-card">
+            <div key={item.label} className="erp-booking-summary-card" style={themeStyles.surface}>
               <span>{item.label}</span>
-              <strong>{item.value}</strong>
+              <strong style={themeStyles.heading}>{item.value}</strong>
             </div>
           ))}
         </div>
@@ -445,13 +627,13 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
         })}
       </div>
 
-      <section className="erp-booking-shell">
+      <section className="erp-booking-shell" style={themeStyles.surface}>
         <div className="erp-booking-shell-heading">
-          <div>
-            <span className="erp-booking-shell-kicker">
+          <div style={{ textAlign: titleAlignment }}>
+            <span className="erp-booking-shell-kicker" style={themeStyles.accent}>
               {copy.stepLabel} {currentStep}
             </span>
-            <h3>
+            <h3 style={themeStyles.heading}>
               {currentStep === 1
                 ? copy.sectionStep1Title
                 : currentStep === 2
@@ -467,9 +649,9 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
             </p>
           </div>
           {holdToken && selectedSlot ? (
-            <div className="erp-booking-timer-card">
+            <div className="erp-booking-timer-card" style={themeStyles.surface}>
               <span>{copy.reservedTimeslotLabel}</span>
-              <strong>{formatRemaining(countdown)}</strong>
+              <strong style={themeStyles.heading}>{formatRemaining(countdown)}</strong>
               <small>
                 {formatDisplayDate(selectedSlot.date, props.language)} {selectedSlot.startTime}-{selectedSlot.endTime}
               </small>
@@ -488,10 +670,10 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
           {currentStep === 1 ? (
             <div className="erp-booking-slot-groups">
               {slotGroups.map((group) => (
-                <section key={group.date} className="erp-booking-slot-group">
+                <section key={group.date} className="erp-booking-slot-group" style={themeStyles.surface}>
                   <div className="erp-booking-slot-group-header">
                     <div>
-                      <h4>{formatDisplayDate(group.date, props.language)}</h4>
+                      <h4 style={themeStyles.heading}>{formatDisplayDate(group.date, props.language)}</h4>
                       <span>{copy.availableSessions(group.slots.filter((slot) => slot.enabled).length)}</span>
                     </div>
                   </div>
@@ -506,6 +688,7 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
                           disabled={!slot.enabled || isHolding}
                           onClick={() => handleHold(slot)}
                           className={`erp-booking-slot-card${isSelected ? ' is-selected' : ''}`}
+                          style={themeStyles.surface}
                         >
                           <div className="erp-booking-slot-time">
                             {slot.startTime} - {slot.endTime}
@@ -525,106 +708,35 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
 
           {currentStep === 2 ? (
             <div className="erp-booking-fields-wrap">
-              <div className="erp-booking-fields" style={{ gridTemplateColumns: layoutColumns }}>
-                {registerFields.map((field) => (
-                  <div key={field.fieldKey} className="erp-booking-field">
-                    <div className="erp-booking-field-label">
-                      {getLocalizedFieldLabel(field, props.language)}
-                      {field.required ? <span>*</span> : null}
+              <div className={`erp-booking-fields-layout${leftColumnFields.length > 0 && rightColumnFields.length > 0 ? ' is-two-column' : ''}`}>
+                {leftColumnFields.length > 0 && rightColumnFields.length > 0 ? (
+                  <>
+                    <div className="erp-booking-fields-column">{leftColumnFields.map((field) => renderFieldCard(field))}</div>
+                    <div className="erp-booking-fields-column">{rightColumnFields.map((field) => renderFieldCard(field))}</div>
+                  </>
+                ) : (
+                  <div className="erp-booking-fields-column">{stackedFields.map((field) => renderFieldCard(field))}</div>
+                )}
+
+                {fullWidthFields.length > 0 ? (
+                  <div className="erp-booking-fields-column is-full">{fullWidthFields.map((field) => renderFieldCard(field))}</div>
+                ) : null}
+
+                <div className="erp-booking-fields-column is-full">
+                  <div className="erp-booking-field" style={themeStyles.surface}>
+                    <div className="erp-booking-field-label" style={themeStyles.heading}>
+                      {copy.communicationPreferenceLabel}
+                      <span>*</span>
                     </div>
-
-                    {field.fieldType === 'TEXTAREA' ? (
-                      <textarea
-                        value={getFieldValue(field.fieldKey)}
-                        onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
-                        required={field.required}
-                        placeholder={getLocalizedFieldPlaceholder(field, props.language)}
-                        rows={4}
-                      />
-                    ) : field.fieldType === 'CHECKBOX' ? (
-                      field.options && field.options.length > 0 ? (
-                        <div className="erp-booking-choice-list">
-                          {field.options.map((option) => {
-                            const checked = getCheckboxValues(field.fieldKey).includes(option);
-
-                            return (
-                              <label key={option} className="erp-booking-choice-item">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(event) => toggleCheckboxValue(field.fieldKey, option, event.target.checked)}
-                                />
-                                <span>{option}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <label className="erp-booking-choice-item">
-                          <input
-                            type="checkbox"
-                            checked={getFieldValue(field.fieldKey) === 'true'}
-                            onChange={(event) => setFieldValue(field.fieldKey, event.target.checked ? 'true' : '')}
-                          />
-                          <span>{getLocalizedFieldLabel(field, props.language)}</span>
-                        </label>
-                      )
-                    ) : field.fieldType === 'RADIO' ? (
-                      <div className="erp-booking-choice-list">
-                        {(field.options ?? []).map((option) => (
-                          <label key={option} className="erp-booking-choice-item">
-                            <input
-                              type="radio"
-                              name={field.fieldKey}
-                              value={option}
-                              checked={getFieldValue(field.fieldKey) === option}
-                              onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
-                              required={field.required}
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-                      </div>
-                    ) : field.fieldType === 'SELECT' ? (
-                      <select value={getFieldValue(field.fieldKey)} onChange={(event) => setFieldValue(field.fieldKey, event.target.value)} required={field.required}>
-                        <option value="">{copy.selectPlaceholder}</option>
-                        {(field.options ?? []).map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type={
-                          field.fieldType === 'EMAIL'
-                            ? 'email'
-                            : field.fieldType === 'NUMBER'
-                              ? 'number'
-                              : field.fieldType === 'DATE'
-                                ? 'date'
-                                : field.fieldType === 'MOBILE'
-                                  ? 'tel'
-                                  : 'text'
-                        }
-                        value={getFieldValue(field.fieldKey)}
-                        onChange={(event) => setFieldValue(field.fieldKey, event.target.value)}
-                        required={field.required}
-                        placeholder={getLocalizedFieldPlaceholder(field, props.language)}
-                      />
-                    )}
+                    <select
+                      value={communicationPreference}
+                      onChange={(event) => setCommunicationPreference(event.target.value as 'EMAIL' | 'SMS')}
+                      style={themeStyles.field}
+                    >
+                      <option value="EMAIL">{isZh ? '電郵' : 'Email'}</option>
+                      <option value="SMS">SMS</option>
+                    </select>
                   </div>
-                ))}
-
-                <div className="erp-booking-field">
-                  <div className="erp-booking-field-label">
-                    {copy.communicationPreferenceLabel}
-                    <span>*</span>
-                  </div>
-                  <select value={communicationPreference} onChange={(event) => setCommunicationPreference(event.target.value as 'EMAIL' | 'SMS')}>
-                    <option value="EMAIL">Email</option>
-                    <option value="SMS">SMS</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -632,8 +744,8 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
 
           {currentStep === 3 ? (
             <div className="erp-booking-review-grid">
-              <div className="erp-booking-review-card">
-                <h4>{copy.reviewSummaryTitle}</h4>
+              <div className="erp-booking-review-card" style={themeStyles.surface}>
+                <h4 style={themeStyles.heading}>{copy.reviewSummaryTitle}</h4>
                 <dl>
                   <div>
                     <dt>{copy.eventNameLabel}</dt>
@@ -649,13 +761,13 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
                   </div>
                   <div>
                     <dt>{copy.communicationLabel}</dt>
-                    <dd>{communicationPreference === 'EMAIL' ? 'Email' : 'SMS'}</dd>
+                    <dd>{communicationPreference === 'EMAIL' ? (isZh ? '電郵' : 'Email') : 'SMS'}</dd>
                   </div>
                 </dl>
               </div>
 
-              <div className="erp-booking-review-card">
-                <h4>{copy.personalDetailsTitle}</h4>
+              <div className="erp-booking-review-card" style={themeStyles.surface}>
+                <h4 style={themeStyles.heading}>{copy.personalDetailsTitle}</h4>
                 <dl>
                   {reviewFields.map((field) => (
                     <div key={field.label}>
@@ -677,6 +789,7 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
             <button
               type="button"
               className="erp-booking-button is-secondary"
+              style={themeStyles.secondaryButton}
               onClick={() => {
                 if (currentStep === 1) {
                   window.history.back();
@@ -690,19 +803,19 @@ export function BookingForm(props: { detail: EventDetailDTO; language: ErpLangua
             </button>
 
             {currentStep === 1 ? (
-              <button type="button" className="erp-booking-button is-primary" onClick={handleContinueFromSlot}>
+              <button type="button" className="erp-booking-button is-primary" style={themeStyles.primaryButton} onClick={handleContinueFromSlot}>
                 {copy.next}
               </button>
             ) : null}
 
             {currentStep === 2 ? (
-              <button type="button" className="erp-booking-button is-primary" onClick={handleContinueToReview}>
+              <button type="button" className="erp-booking-button is-primary" style={themeStyles.primaryButton} onClick={handleContinueToReview}>
                 {copy.next}
               </button>
             ) : null}
 
             {currentStep === 3 ? (
-              <button type="submit" disabled={isSubmitting} className="erp-booking-button is-primary">
+              <button type="submit" disabled={isSubmitting} className="erp-booking-button is-primary" style={themeStyles.primaryButton}>
                 {isSubmitting ? copy.submitting : copy.submit}
               </button>
             ) : null}

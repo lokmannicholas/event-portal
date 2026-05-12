@@ -52,10 +52,12 @@ export default {
 
     { method: 'GET', path: '/portal/erp/partitions/:partitionCode', handler: 'portal.erpPartitionLanding', config: erpRouteAccess },
     { method: 'GET', path: '/portal/erp/events/:documentId', handler: 'portal.erpEventDetail', config: erpRouteAccess },
+    { method: 'GET', path: '/portal/erp/eforms/:documentId', handler: 'portal.erpEformDetail', config: erpRouteAccess },
     { method: 'GET', path: '/portal/erp/documents', handler: 'portal.erpDocuments', config: erpRouteAccess },
     { method: 'GET', path: '/portal/erp/contacts', handler: 'portal.erpContacts', config: erpRouteAccess },
     { method: 'POST', path: '/portal/erp/holds', handler: 'portal.createHold', config: erpRouteAccess },
     { method: 'POST', path: '/portal/erp/bookings', handler: 'portal.createBooking', config: erpRouteAccess },
+    { method: 'POST', path: '/portal/erp/eforms/submissions', handler: 'portal.createEformSubmission', config: erpRouteAccess },
     { method: 'POST', path: '/portal/erp/enquiries', handler: 'portal.createEnquiry', config: erpRouteAccess },
     { method: 'POST', path: '/portal/erp/cancellations/:documentId', handler: 'portal.erpCancelAppointment', config: erpRouteAccess }
   ],

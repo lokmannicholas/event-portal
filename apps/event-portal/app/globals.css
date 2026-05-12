@@ -1441,12 +1441,22 @@ input[type='file']::file-selector-button {
 
 @media (max-width: 720px) {
   .portal-user-picker-toolbar,
-  .portal-dialog-grid {
+  .portal-dialog-grid,
+  .portal-layout-toolbar,
+  .portal-layout-color-input {
     grid-template-columns: 1fr;
   }
 
-  .portal-dialog-header {
+  .portal-dialog-header,
+  .portal-layout-toolbar-actions {
     flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 960px) {
+  .portal-layout-board {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1506,6 +1516,262 @@ input[type='file']::file-selector-button {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.9rem 1rem;
+}
+
+.portal-layout-toolbar {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  align-items: end;
+}
+
+.portal-layout-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.portal-layout-board {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-layout-column {
+  display: grid;
+  gap: 0.85rem;
+  min-height: 280px;
+  border: 1px solid var(--pc-border);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(0, 109, 134, 0.04), transparent 90px),
+    var(--pc-paper-soft);
+  padding: 1rem;
+}
+
+.portal-layout-column-header {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.portal-layout-column-header strong {
+  font-size: 0.96rem;
+}
+
+.portal-layout-column-header span {
+  color: var(--pc-muted);
+  font-size: 0.82rem;
+}
+
+.portal-layout-column-body {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+}
+
+.portal-layout-card {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid rgba(171, 191, 206, 0.9);
+  border-radius: 16px;
+  background: var(--pc-paper);
+  padding: 0.9rem;
+  cursor: grab;
+  box-shadow: 0 10px 18px rgba(18, 32, 51, 0.05);
+}
+
+.portal-layout-card.is-dragging {
+  opacity: 0.55;
+}
+
+.portal-layout-card.is-muted {
+  opacity: 0.72;
+}
+
+.portal-layout-card-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.portal-layout-card-copy strong {
+  font-size: 0.92rem;
+}
+
+.portal-layout-card-copy span {
+  color: var(--pc-muted);
+  font-size: 0.78rem;
+}
+
+.portal-layout-card-meta,
+.portal-layout-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.portal-layout-pill,
+.portal-layout-mini-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.portal-layout-pill {
+  padding: 0.3rem 0.7rem;
+  background: rgba(0, 109, 134, 0.1);
+  color: var(--pc-primary-strong);
+}
+
+.portal-layout-pill.is-muted {
+  background: rgba(91, 103, 122, 0.12);
+  color: var(--pc-muted);
+}
+
+.portal-layout-mini-button {
+  border: 1px solid var(--pc-border);
+  background: var(--pc-paper-soft);
+  color: var(--pc-ink);
+  padding: 0.25rem 0.7rem;
+}
+
+.portal-layout-mini-button.is-active {
+  border-color: var(--pc-primary-strong);
+  background: var(--pc-primary-soft);
+  color: var(--pc-primary-strong);
+}
+
+.portal-layout-dropzone {
+  min-height: 52px;
+  border: 1px dashed #aac0d3;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--pc-muted);
+  font-weight: 700;
+}
+
+.portal-layout-color-grid {
+  display: grid;
+  gap: 0.95rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.portal-layout-color-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.portal-layout-color-input {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.portal-layout-color-input input[type='color'] {
+  width: 56px;
+  min-width: 56px;
+  height: 44px;
+  padding: 0.2rem;
+  border-radius: 12px;
+}
+
+.portal-layout-preview {
+  border-radius: 22px;
+  padding: 1.2rem;
+}
+
+.portal-layout-preview-surface {
+  display: grid;
+  gap: 1.1rem;
+  border: 1px solid var(--pc-border);
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 18px 36px rgba(18, 32, 51, 0.08);
+}
+
+.portal-layout-preview-title {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.portal-layout-preview-title.is-center {
+  text-align: center;
+}
+
+.portal-layout-preview-title.is-right {
+  text-align: right;
+}
+
+.portal-layout-preview-title span {
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.portal-layout-preview-title h4 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.portal-layout-preview-title p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.portal-layout-preview-grid {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.portal-layout-preview-column {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.portal-layout-preview-grid:has(.portal-layout-preview-column.is-left):has(.portal-layout-preview-column.is-right) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.portal-layout-preview-column.is-full {
+  grid-column: 1 / -1;
+}
+
+.portal-layout-preview-field {
+  display: grid;
+  gap: 0.28rem;
+  min-height: 74px;
+  border: 1px solid var(--pc-border);
+  border-radius: 16px;
+  padding: 0.85rem 0.95rem;
+}
+
+.portal-layout-preview-field strong {
+  font-size: 0.9rem;
+}
+
+.portal-layout-preview-field span {
+  color: inherit;
+  font-size: 0.8rem;
+}
+
+.portal-layout-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.portal-layout-preview-actions button {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.7rem 1.2rem;
+  font-weight: 800;
 }
 
 .portal-checkbox-row {
@@ -2298,6 +2564,25 @@ input[type='file']::file-selector-button {
   gap: 1rem;
 }
 
+.erp-booking-fields-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.erp-booking-fields-layout.is-two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.erp-booking-fields-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.erp-booking-fields-column.is-full {
+  grid-column: 1 / -1;
+}
+
 .erp-booking-field {
   display: grid;
   gap: 0.5rem;
@@ -2577,7 +2862,8 @@ input[type='file']::file-selector-button {
   .erp-booking-stepper,
   .erp-booking-summary-grid,
   .erp-booking-slot-grid,
-  .erp-booking-review-grid {
+  .erp-booking-review-grid,
+  .erp-booking-fields-layout {
     grid-template-columns: 1fr;
   }
 

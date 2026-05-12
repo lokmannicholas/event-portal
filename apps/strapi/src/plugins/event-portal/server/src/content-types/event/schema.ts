@@ -87,6 +87,18 @@ export default {
       "type": "uid",
       "targetField": "eventName"
     },
+    "publicUuid": {
+      "type": "string",
+      "unique": true
+    },
+    "eventAccessType": {
+      "type": "enumeration",
+      "enum": [
+        "PUBLIC",
+        "PRIVATE"
+      ],
+      "default": "PUBLIC"
+    },
     "publishedToPortals": {
       "type": "boolean",
       "default": false

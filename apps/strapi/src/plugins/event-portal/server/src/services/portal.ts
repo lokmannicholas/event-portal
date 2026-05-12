@@ -3,7 +3,7 @@ import type { Core } from '@strapi/strapi';
 import { buildAppointmentIdentityHash, createBookingReference, createCancelToken, createHoldToken } from '../utils/booking';
 import { deriveEventStatus } from '../utils/event-status';
 import { type EventNoticeChannel, type EventNoticeType, resolveEventNoticeTemplate } from '../utils/event-notice-templates';
-import { mapAppointment, mapContact, mapDocument, mapEventDetail, mapEventListItem, mapGroup, mapPartition, mapTemplate, mapUser } from '../utils/mappers';
+import { mapAppointment, mapContact, mapDocument, mapEformDetail, mapEformListItem, mapEventDetail, mapEventListItem, mapGroup, mapPartition, mapTemplate, mapUser } from '../utils/mappers';
 import { sendNotification } from '../utils/notifier';
 import { calculateRemaining } from '../utils/slot-capacity';
 
@@ -45,6 +45,10 @@ function nowIso() {
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function createEformSubmissionReference() {
+  return `EF-${randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
 }
 
 function publicBaseUrl() {
@@ -308,6 +312,30 @@ function eventVisibleInErp(event: AnyRecord) {
   );
 }
 
+function eformVisibleInErp(eform: AnyRecord) {
+  const status = getEventStatus(eform);
+  const today = todayIso();
+  const withinEventPeriod =
+    typeof eform.eventStartDate === 'string' &&
+    typeof eform.eventEndDate === 'string' &&
+    eform.eventStartDate <= today &&
+    today <= eform.eventEndDate;
+  const expired = typeof eform.eventEndDate === 'string' && eform.eventEndDate < today;
+
+  if ((status !== 'RELEASED' && status !== 'CLOSED') || status === 'DISABLED') {
+    return false;
+  }
+
+  if (status === 'CLOSED' && !(eform.showInExpired === true && expired)) {
+    return false;
+  }
+
+  return (
+    (eform.showInEventPeriod !== false && withinEventPeriod) ||
+    (eform.showInExpired === true && expired)
+  );
+}
+
 function appointmentVisibleInEcp(appointment: AnyRecord, scope: EcpScope | null) {
   return eventVisibleInEcp(appointment.event ?? {}, scope);
 }
@@ -470,7 +498,33 @@ async function fetchEventDetailRecordByIdentifier(strapi: Core.Strapi, identifie
     return byDocumentId;
   }
 
-  const records = (await strapi.documents('plugin::event-portal.event').findMany({
+  const byPublicUuid = (await strapi.documents('plugin::event-portal.event').findMany({
+    filters: {
+      publicUuid: identifier,
+    },
+    populate: {
+      userPartition: true,
+      slots: true,
+      template: {
+        populate: {
+          formFields: true,
+        },
+      },
+      smsRegistrationNoticeTemplate: true,
+      smsAnnouncementNoticeTemplate: true,
+      smsEventUpdateNoticeTemplate: true,
+      emailRegistrationNoticeTemplate: true,
+      emailAnnouncementNoticeTemplate: true,
+      emailEventUpdateNoticeTemplate: true,
+    },
+    limit: 1,
+  })) as AnyRecord[];
+
+  if (byPublicUuid[0]) {
+    return byPublicUuid[0];
+  }
+
+  const byPublicSlug = (await strapi.documents('plugin::event-portal.event').findMany({
     filters: {
       publicSlug: identifier,
     },
@@ -492,7 +546,80 @@ async function fetchEventDetailRecordByIdentifier(strapi: Core.Strapi, identifie
     limit: 1,
   })) as AnyRecord[];
 
-  return records[0] ?? null;
+  return byPublicSlug[0] ?? null;
+}
+
+async function fetchEformList(strapi: Core.Strapi) {
+  return (await strapi.documents('plugin::event-portal.eform').findMany({
+    populate: {
+      userPartition: true,
+      template: {
+        populate: {
+          formFields: true,
+        },
+      },
+    },
+    sort: ['eventStartDate:asc', 'eformName:asc'],
+    limit: 200,
+  })) as AnyRecord[];
+}
+
+async function fetchEformDetailRecord(strapi: Core.Strapi, documentId: string) {
+  return (await strapi.documents('plugin::event-portal.eform').findOne({
+    documentId,
+    populate: {
+      userPartition: true,
+      template: {
+        populate: {
+          formFields: true,
+        },
+      },
+    },
+  })) as AnyRecord | null;
+}
+
+async function fetchEformDetailRecordByIdentifier(strapi: Core.Strapi, identifier: string) {
+  const byDocumentId = await fetchEformDetailRecord(strapi, identifier);
+
+  if (byDocumentId) {
+    return byDocumentId;
+  }
+
+  const byPublicUuid = (await strapi.documents('plugin::event-portal.eform').findMany({
+    filters: {
+      publicUuid: identifier,
+    },
+    populate: {
+      userPartition: true,
+      template: {
+        populate: {
+          formFields: true,
+        },
+      },
+    },
+    limit: 1,
+  })) as AnyRecord[];
+
+  if (byPublicUuid[0]) {
+    return byPublicUuid[0];
+  }
+
+  const byPublicSlug = (await strapi.documents('plugin::event-portal.eform').findMany({
+    filters: {
+      publicSlug: identifier,
+    },
+    populate: {
+      userPartition: true,
+      template: {
+        populate: {
+          formFields: true,
+        },
+      },
+    },
+    limit: 1,
+  })) as AnyRecord[];
+
+  return byPublicSlug[0] ?? null;
 }
 
 async function fetchAppointmentList(strapi: Core.Strapi) {
@@ -863,10 +990,23 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       })
       .filter(eventVisibleInErp)
       .map(mapEventListItem);
+    const eforms = (await fetchEformList(strapi))
+      .filter((eform) => {
+        const eformPartitionDocumentId = String(eform.userPartition?.documentId ?? '');
+        const eformPartitionCode = String(eform.userPartition?.code ?? '');
+
+        return (
+          (selectedPartitionDocumentId && eformPartitionDocumentId === selectedPartitionDocumentId) ||
+          (selectedPartitionCode && eformPartitionCode === selectedPartitionCode)
+        );
+      })
+      .filter(eformVisibleInErp)
+      .map(mapEformListItem);
 
     return {
       partition: mapPartition(selectedPartition),
       events,
+      eforms,
       documents: await fetchPortalDocuments(strapi, 'ERP'),
       contacts: await fetchPortalContacts(strapi, 'ERP'),
     };
@@ -875,11 +1015,25 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async erpEventDetail(identifier: string, partitionCode?: string) {
     const event = await fetchEventDetailRecordByIdentifier(strapi, identifier);
 
-    if (!event || (partitionCode && event.userPartition?.code !== partitionCode) || !eventVisibleInErp(event)) {
+    if (!event || !eventVisibleInErp(event)) {
       return null;
     }
 
     return mapEventDetail(event);
+  },
+
+  async erpEformDetail(identifier: string, partitionCode?: string) {
+    const eform = await fetchEformDetailRecordByIdentifier(strapi, identifier);
+
+    if (!eform || !eformVisibleInErp(eform)) {
+      return null;
+    }
+
+    if (partitionCode && eform.userPartition?.code && eform.userPartition.code !== partitionCode) {
+      return null;
+    }
+
+    return mapEformDetail(eform);
   },
 
   async createHold(input: { eventDocumentId: string; eventSlotDocumentId: string; partitionCode: string }) {
@@ -1127,6 +1281,97 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     await createAndSendNoticeForPreference(strapi, hydrated, 'REGISTRATION');
 
     return mapAppointment(hydrated);
+  },
+
+  async createEformSubmission(input: {
+    eformDocumentId: string;
+    partitionCode: string;
+    termsAccepted: boolean;
+    formValues?: Record<string, string>;
+  }) {
+    if (!input.termsAccepted) {
+      throw new Error('Terms and conditions must be accepted');
+    }
+
+    const eform = await fetchEformDetailRecord(strapi, input.eformDocumentId);
+
+    if (!eform) {
+      throw new Error('E-form not found');
+    }
+
+    if (eform.userPartition?.code !== input.partitionCode) {
+      throw new Error('This e-form is not available in the requested partition');
+    }
+
+    if (!eformVisibleInErp(eform)) {
+      throw new Error('This e-form is not available for ERP submission');
+    }
+
+    const erpFields = toArray<any>(eform.template?.formFields).filter((field) => field.visibleInErp !== false);
+    const allowedFieldKeys = new Set(erpFields.map((field) => String(field.fieldKey ?? '')));
+    const formValues = Object.fromEntries(
+      Object.entries(input.formValues ?? {})
+        .filter(([fieldKey]) => allowedFieldKeys.has(fieldKey))
+        .map(([fieldKey, value]) => [fieldKey, typeof value === 'string' ? value.trim() : '']),
+    );
+
+    for (const field of erpFields) {
+      if (field.required && !formValues[String(field.fieldKey ?? '')]) {
+        throw new Error(`${field.labelEn ?? field.fieldKey ?? 'Registration field'} is required`);
+      }
+    }
+
+    const participantName = formValues.participant_name;
+    const staffNumber = formValues.staff_number;
+    const medicalCardNumber = formValues.medical_card_number;
+    const hkidPrefix = formValues.hkid_prefix;
+    const registeredEmail = formValues.registered_email;
+    const mobileNumber = formValues.mobile_number;
+    const identityHash =
+      participantName && staffNumber
+        ? buildAppointmentIdentityHash({
+            eventDocumentId: input.eformDocumentId,
+            participantName,
+            staffNumber,
+          })
+        : undefined;
+
+    const created = (await strapi.documents('plugin::event-portal.eform-submission').create({
+      data: {
+        submissionReference: createEformSubmissionReference(),
+        participantName,
+        staffNumber,
+        medicalCardNumber,
+        hkidPrefix,
+        registeredEmail,
+        mobileNumber,
+        termsAccepted: input.termsAccepted,
+        participantIdentityHash: identityHash,
+        submittedAt: nowIso(),
+        portalSource: 'ERP',
+        payload: {
+          source: 'ERP',
+          formValues,
+        },
+        eform: input.eformDocumentId,
+      } as any,
+    })) as AnyRecord;
+
+    return {
+      documentId: String(created.documentId ?? ''),
+      submissionReference: String(created.submissionReference ?? ''),
+      eformDocumentId: String(eform.documentId ?? ''),
+      eformName: String(eform.eformName ?? ''),
+      companyName: String(eform.companyName ?? ''),
+      participantName: participantName || undefined,
+      staffNumber: staffNumber || undefined,
+      medicalCardNumber: medicalCardNumber || undefined,
+      hkidPrefix: hkidPrefix || undefined,
+      registeredEmail: registeredEmail || undefined,
+      mobileNumber: mobileNumber || undefined,
+      submittedAt: created.submittedAt,
+      portalSource: 'ERP',
+    };
   },
 
   async createEnquiry(input: { registeredEmail?: string; mobileNumber?: string }) {

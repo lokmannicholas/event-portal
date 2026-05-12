@@ -23,7 +23,7 @@ export default async function Page({ searchParams }: PageProps) {
           <ActionLink href="/partitions/new" label="Create partition" />
         </ActionRow>
 
-        <Card title="Partition list" description="Each event is assigned to one partition. The partition is the ERP entry scope, while each event gets its own `/e/{eventCode}` path under that partition. Open a partition to update it.">
+        <Card title="Partition list" description="Each event is assigned to one partition. The partition remains the ERP entry scope, while each event now gets its own `/e/public/{uuid}` or `/e/private/{uuid}` path. Open a partition to update it.">
           <SimpleTable
             columns={[
               { key: 'code', label: 'Partition Code' },

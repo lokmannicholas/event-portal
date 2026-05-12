@@ -1,8 +1,10 @@
 import type {
   AppointmentDTO,
   ContactInfoDTO,
+  CreateEformSubmissionInput,
   CreateBookingInput,
   CreateHoldInput,
+  EformDetailDTO,
   EnquiryInput,
   EnquiryResponseDTO,
   EventDetailDTO,
@@ -34,10 +36,12 @@ export async function getErpLanding(partitionCode: string): Promise<PartitionLan
   return fetchCms<PartitionLandingDTO>(`/api/portal/erp/partitions/${partitionCode}`);
 }
 
-export async function getErpEventDetail(eventCode: string, partitionCode: string): Promise<EventDetailDTO | undefined> {
-  return fetchCms<EventDetailDTO>(
-    `/api/portal/erp/events/${encodeURIComponent(eventCode)}?partitionCode=${encodeURIComponent(partitionCode)}`,
-  );
+export async function getErpEventDetail(eventIdentifier: string): Promise<EventDetailDTO | undefined> {
+  return fetchCms<EventDetailDTO>(`/api/portal/erp/events/${encodeURIComponent(eventIdentifier)}`);
+}
+
+export async function getErpEformDetail(eformIdentifier: string): Promise<EformDetailDTO | undefined> {
+  return fetchCms<EformDetailDTO>(`/api/portal/erp/eforms/${encodeURIComponent(eformIdentifier)}`);
 }
 
 export async function getErpDocuments(): Promise<PortalDocumentDTO[]> {
@@ -74,6 +78,20 @@ export async function createErpBooking(input: CreateBookingInput): Promise<Appoi
   }
 
   return (await response.json()) as AppointmentDTO;
+}
+
+export async function createErpEformSubmission(input: CreateEformSubmissionInput) {
+  const response = await fetch(`${STRAPI_URL}/api/portal/erp/eforms/submissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to submit e-form');
+  }
+
+  return response.json();
 }
 
 export async function sendErpEnquiry(input: EnquiryInput): Promise<EnquiryResponseDTO> {

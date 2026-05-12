@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PaginationControls, SimpleTable, Stack, StatusBadge } from '@event-portal/ui';
 import type { AppointmentDTO, EventListItemDTO, NoticeDTO, NotificationType } from '@event-portal/contracts';
 import { sendSingleNoticeAction } from '../app/actions/notice-actions';
+import { getPortalText, type PortalLanguage } from '../lib/portal-language';
 import { ActionRow } from './admin-forms';
 
 const MAX_SELECTION = 20;
@@ -19,6 +20,7 @@ type NoticeSendPanelProps = {
   appointments: AppointmentDTO[];
   notices: NoticeDTO[];
   initialEventDocumentId?: string;
+  language?: PortalLanguage;
 };
 
 function SuccessIcon() {
@@ -38,6 +40,34 @@ function FailedIcon() {
 }
 
 export function NoticeSendPanel(props: NoticeSendPanelProps) {
+  const language = props.language ?? 'en';
+  const copy = {
+    event: getPortalText(language, 'Event', '活動'),
+    notSelected: getPortalText(language, 'Not selected', '未選擇'),
+    noticeType: getPortalText(language, 'Notice type', '通知類型'),
+    appointments: getPortalText(language, 'Appointments', '預約'),
+    selected: (count: number) => getPortalText(language, `${count} / ${MAX_SELECTION} selected`, `已選擇 ${count} / ${MAX_SELECTION}`),
+    helper: getPortalText(language, `Select up to ${MAX_SELECTION} appointments. Notices are sent one by one in the selected order.`, `最多可選擇 ${MAX_SELECTION} 個預約。通知會按所選次序逐一發送。`),
+    reference: getPortalText(language, 'Reference', '編號'),
+    participant: getPortalText(language, 'Participant', '參加者'),
+    contact: getPortalText(language, 'Contact', '聯絡方式'),
+    preference: getPortalText(language, 'Preference', '偏好'),
+    slot: getPortalText(language, 'Date / Slot', '日期 / 時段'),
+    history: getPortalText(language, 'History', '歷史'),
+    result: getPortalText(language, 'Result', '結果'),
+    sentSuccessfully: getPortalText(language, 'Sent successfully', '發送成功'),
+    failed: getPortalText(language, 'Failed', '失敗'),
+    sending: getPortalText(language, 'Sending...', '發送中...'),
+    noAppointments: getPortalText(language, 'No appointments.', '沒有預約。'),
+    showing: (start: number, end: number, total: number) => getPortalText(language, `Showing ${start}-${end} of ${total} appointments.`, `顯示第 ${start}-${end} 項，共 ${total} 個預約。`),
+    pagination: getPortalText(language, 'Appointment pagination', '預約分頁'),
+    first: getPortalText(language, 'First', '最前'),
+    previous: getPortalText(language, 'Previous', '上一頁'),
+    next: getPortalText(language, 'Next', '下一頁'),
+    last: getPortalText(language, 'Last', '最後'),
+    sendNotices: getPortalText(language, 'Send notices', '發送通知'),
+    backToHistory: getPortalText(language, 'Back to history', '返回通知記錄'),
+  };
   const [selectedEventDocumentId, setSelectedEventDocumentId] = useState(props.initialEventDocumentId ?? '');
   const [noticeType, setNoticeType] = useState<NotificationType>('REGISTRATION');
   const [selectedAppointmentIds, setSelectedAppointmentIds] = useState<string[]>([]);
@@ -159,9 +189,9 @@ export function NoticeSendPanel(props: NoticeSendPanelProps) {
     <Stack gap={16}>
       <div className="portal-form-grid">
         <label className="portal-field">
-          <span className="portal-field-label">Event</span>
+          <span className="portal-field-label">{copy.event}</span>
           <select value={selectedEventDocumentId} onChange={(event) => setSelectedEventDocumentId(event.target.value)}>
-            <option value="">Not selected</option>
+            <option value="">{copy.notSelected}</option>
             {props.events.map((event) => (
               <option key={event.documentId} value={event.documentId}>
                 {event.eventName} · {event.eventCode}
@@ -171,7 +201,7 @@ export function NoticeSendPanel(props: NoticeSendPanelProps) {
         </label>
 
         <label className="portal-field">
-          <span className="portal-field-label">Notice type</span>
+          <span className="portal-field-label">{copy.noticeType}</span>
           <select value={noticeType} onChange={(event) => setNoticeType(event.target.value as NotificationType)}>
             <option value="REGISTRATION">REGISTRATION</option>
             <option value="ANNOUNCEMENT">ANNOUNCEMENT</option>
@@ -182,24 +212,22 @@ export function NoticeSendPanel(props: NoticeSendPanelProps) {
 
       <div className="portal-field-full">
         <div className="portal-table-header">
-          <span className="portal-field-label">Appointments</span>
+          <span className="portal-field-label">{copy.appointments}</span>
           <span className="portal-selection-summary">
-            {selectedAppointmentIds.length} / {MAX_SELECTION} selected
+            {copy.selected(selectedAppointmentIds.length)}
           </span>
         </div>
-        <p className="portal-helper-text">
-          Select up to {MAX_SELECTION} appointments. Notices are sent one by one in the selected order.
-        </p>
+        <p className="portal-helper-text">{copy.helper}</p>
         <SimpleTable
           columns={[
             { key: 'select', label: '' },
-            { key: 'reference', label: 'Reference' },
-            { key: 'participant', label: 'Participant' },
-            { key: 'contact', label: 'Contact' },
-            { key: 'preference', label: 'Preference' },
-            { key: 'slot', label: 'Date / Slot' },
-            { key: 'history', label: 'History' },
-            { key: 'result', label: 'Result' },
+            { key: 'reference', label: copy.reference },
+            { key: 'participant', label: copy.participant },
+            { key: 'contact', label: copy.contact },
+            { key: 'preference', label: copy.preference },
+            { key: 'slot', label: copy.slot },
+            { key: 'history', label: copy.history },
+            { key: 'result', label: copy.result },
           ]}
           rows={pagedAppointments.map((appointment) => {
             const checked = selectedAppointmentIds.includes(appointment.documentId);
@@ -240,18 +268,18 @@ export function NoticeSendPanel(props: NoticeSendPanelProps) {
               result: (
                 <div className="portal-send-result-cell">
                   {lastResultStatus === 'SENT' ? (
-                    <span className="portal-send-result success" title="Sent successfully">
+                    <span className="portal-send-result success" title={copy.sentSuccessfully}>
                       <SuccessIcon />
                     </span>
                   ) : lastResultStatus === 'FAILED' ? (
                     <span className="portal-send-result-inline">
-                      <span className="portal-send-result failed" title={lastErrorMessage ?? 'Failed'}>
+                      <span className="portal-send-result failed" title={lastErrorMessage ?? copy.failed}>
                         <FailedIcon />
                       </span>
-                      <span className="portal-send-result-message">{lastErrorMessage ?? 'Failed'}</span>
+                      <span className="portal-send-result-message">{lastErrorMessage ?? copy.failed}</span>
                     </span>
                   ) : rowState.status === 'SENDING' ? (
-                    <span className="portal-send-result pending">Sending...</span>
+                    <span className="portal-send-result pending">{copy.sending}</span>
                   ) : (
                     '-'
                   )}
@@ -264,25 +292,25 @@ export function NoticeSendPanel(props: NoticeSendPanelProps) {
         <div className="portal-pagination">
           <div className="portal-pagination-summary">
             {filteredAppointments.length === 0
-              ? 'No appointments.'
-              : `Showing ${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, filteredAppointments.length)} of ${filteredAppointments.length} appointments.`}
+              ? copy.noAppointments
+              : copy.showing((currentPage - 1) * PAGE_SIZE + 1, Math.min(currentPage * PAGE_SIZE, filteredAppointments.length), filteredAppointments.length)}
           </div>
           {totalPages > 1 ? (
-            <nav className="portal-pagination-links" aria-label="Appointment pagination">
+            <nav className="portal-pagination-links" aria-label={copy.pagination}>
               <button type="button" className="portal-pagination-link" disabled={currentPage === 1} onClick={() => setPage(1)}>
-                First
+                {copy.first}
               </button>
               <button type="button" className="portal-pagination-link" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
-                Previous
+                {copy.previous}
               </button>
               <span className="portal-pagination-link is-active" aria-current="page">
                 {currentPage}
               </span>
               <button type="button" className="portal-pagination-link" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
-                Next
+                {copy.next}
               </button>
               <button type="button" className="portal-pagination-link" disabled={currentPage === totalPages} onClick={() => setPage(totalPages)}>
-                Last
+                {copy.last}
               </button>
             </nav>
           ) : null}
@@ -296,10 +324,10 @@ export function NoticeSendPanel(props: NoticeSendPanelProps) {
           disabled={sending || !selectedEventDocumentId || selectedAppointmentIds.length === 0}
           onClick={() => void handleSend()}
         >
-          {sending ? 'Sending...' : 'Send notices'}
+          {sending ? copy.sending : copy.sendNotices}
         </button>
         <a href="/notices" className="btn btn-outline-secondary">
-          Back to history
+          {copy.backToHistory}
         </a>
       </ActionRow>
     </Stack>

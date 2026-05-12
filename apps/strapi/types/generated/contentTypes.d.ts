@@ -717,6 +717,123 @@ export interface PluginEventPortalContactInfo
   };
 }
 
+export interface PluginEventPortalEform extends Struct.CollectionTypeSchema {
+  collectionName: 'eforms';
+  info: {
+    description: 'ERP form object without booking timeslots';
+    displayName: 'E-Form';
+    pluralName: 'eforms';
+    singularName: 'eform';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    companyName: Schema.Attribute.String & Schema.Attribute.Required;
+    companyNameZh: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eformDescription: Schema.Attribute.Text;
+    eformDescriptionZh: Schema.Attribute.Text;
+    eformName: Schema.Attribute.String & Schema.Attribute.Required;
+    eformNameZh: Schema.Attribute.String;
+    eformNotes: Schema.Attribute.Text;
+    eformNotesZh: Schema.Attribute.Text;
+    eventAccessType: Schema.Attribute.Enumeration<['PUBLIC', 'PRIVATE']> &
+      Schema.Attribute.DefaultTo<'PUBLIC'>;
+    eventEndDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    eventStartDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    eventStatus: Schema.Attribute.Enumeration<
+      ['DRAFT', 'RELEASED', 'DISABLED', 'CLOSED']
+    > &
+      Schema.Attribute.DefaultTo<'DRAFT'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::event-portal.eform'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String & Schema.Attribute.Required;
+    locationZh: Schema.Attribute.String;
+    publicBaseUrl: Schema.Attribute.String;
+    publicSlug: Schema.Attribute.UID<'eformName'>;
+    publicUuid: Schema.Attribute.String & Schema.Attribute.Unique;
+    publishedAt: Schema.Attribute.DateTime;
+    publishedToPortals: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    registrationEndDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    registrationStartDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    releasedAt: Schema.Attribute.DateTime;
+    showInEventPeriod: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    showInExpired: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showInRegistrationPeriod: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    submissions: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::event-portal.eform-submission'
+    >;
+    template: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.event-template'
+    > &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    userPartition: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::event-portal.user-partition'
+    >;
+  };
+}
+
+export interface PluginEventPortalEformSubmission
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'eform_submissions';
+  info: {
+    description: 'Submitted ERP e-form payload';
+    displayName: 'E-Form Submission';
+    pluralName: 'eform-submissions';
+    singularName: 'eform-submission';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eform: Schema.Attribute.Relation<'manyToOne', 'plugin::event-portal.eform'>;
+    hkidPrefix: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::event-portal.eform-submission'
+    > &
+      Schema.Attribute.Private;
+    medicalCardNumber: Schema.Attribute.String;
+    mobileNumber: Schema.Attribute.String;
+    participantIdentityHash: Schema.Attribute.String;
+    participantName: Schema.Attribute.String;
+    payload: Schema.Attribute.JSON;
+    portalSource: Schema.Attribute.Enumeration<['ERP', 'EAP', 'ECP']> &
+      Schema.Attribute.DefaultTo<'ERP'>;
+    publishedAt: Schema.Attribute.DateTime;
+    registeredEmail: Schema.Attribute.Email;
+    staffNumber: Schema.Attribute.String;
+    submissionReference: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    submittedAt: Schema.Attribute.DateTime;
+    termsAccepted: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
   collectionName: 'events';
   info: {
@@ -756,6 +873,8 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::event-portal.notice-template'
     >;
+    eventAccessType: Schema.Attribute.Enumeration<['PUBLIC', 'PRIVATE']> &
+      Schema.Attribute.DefaultTo<'PUBLIC'>;
     eventDescription: Schema.Attribute.Text;
     eventDescriptionZh: Schema.Attribute.Text;
     eventEndDate: Schema.Attribute.Date & Schema.Attribute.Required;
@@ -782,6 +901,7 @@ export interface PluginEventPortalEvent extends Struct.CollectionTypeSchema {
     locationZh: Schema.Attribute.String;
     publicBaseUrl: Schema.Attribute.String;
     publicSlug: Schema.Attribute.UID<'eventName'>;
+    publicUuid: Schema.Attribute.String & Schema.Attribute.Unique;
     publishedAt: Schema.Attribute.DateTime;
     publishedToPortals: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
@@ -892,7 +1012,12 @@ export interface PluginEventPortalEventTemplate
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    customCss: Schema.Attribute.Text;
     description: Schema.Attribute.Text;
+    eforms: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::event-portal.eform'
+    >;
     events: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.event'
@@ -900,6 +1025,7 @@ export interface PluginEventPortalEventTemplate
     eventTemplateStatus: Schema.Attribute.Enumeration<['ACTIVE', 'ARCHIVED']> &
       Schema.Attribute.DefaultTo<'ACTIVE'>;
     formFields: Schema.Attribute.Component<'event-portal.field-config', true>;
+    layoutSettings: Schema.Attribute.JSON;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1176,6 +1302,10 @@ export interface PluginEventPortalUserPartition
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.String & Schema.Attribute.Required;
+    eforms: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::event-portal.eform'
+    >;
     events: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::event-portal.event'
@@ -1641,6 +1771,8 @@ declare module '@strapi/strapi' {
       'plugin::event-portal.appointment-hold': PluginEventPortalAppointmentHold;
       'plugin::event-portal.audit-log': PluginEventPortalAuditLog;
       'plugin::event-portal.contact-info': PluginEventPortalContactInfo;
+      'plugin::event-portal.eform': PluginEventPortalEform;
+      'plugin::event-portal.eform-submission': PluginEventPortalEformSubmission;
       'plugin::event-portal.event': PluginEventPortalEvent;
       'plugin::event-portal.event-slot': PluginEventPortalEventSlot;
       'plugin::event-portal.event-template': PluginEventPortalEventTemplate;

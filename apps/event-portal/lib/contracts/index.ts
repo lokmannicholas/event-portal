@@ -2,6 +2,7 @@ export type PortalKind = 'EAP' | 'ECP' | 'ERP';
 export type GroupStatus = 'ACTIVE' | 'DISABLED';
 export type PortalRole = 'ADMIN' | 'CLIENT_HR';
 export type EventStatus = 'DRAFT' | 'RELEASED' | 'DISABLED' | 'CLOSED';
+export type EventAccessType = 'PUBLIC' | 'PRIVATE';
 export type FieldType =
   | 'TEXT'
   | 'TEXTAREA'
@@ -19,6 +20,8 @@ export type NotificationChannel = 'EMAIL' | 'SMS';
 export type NoticeStatus = 'PENDING' | 'SENT' | 'FAILED';
 export type LanguageCode = 'EN' | 'ZH';
 export type FormLayoutMode = 'SINGLE_COLUMN' | 'TWO_COLUMN' | 'SPLIT';
+export type TemplateLayoutFieldColumn = 'left' | 'right' | 'full';
+export type TemplateTitlePosition = 'left' | 'center' | 'right';
 
 export interface MediaAssetDTO {
   documentId?: string;
@@ -96,6 +99,31 @@ export interface FormFieldConfigDTO {
   options?: string[];
 }
 
+export interface TemplateLayoutFieldPositionDTO {
+  fieldKey: string;
+  column: TemplateLayoutFieldColumn;
+  order: number;
+}
+
+export interface TemplateLayoutColorSettingsDTO {
+  pageBackground?: string;
+  surfaceBackground?: string;
+  surfaceBorderColor?: string;
+  accentColor?: string;
+  headingColor?: string;
+  bodyTextColor?: string;
+  fieldBackground?: string;
+  fieldBorderColor?: string;
+  buttonBackground?: string;
+  buttonTextColor?: string;
+}
+
+export interface TemplateLayoutSettingsDTO {
+  titlePosition?: TemplateTitlePosition;
+  fieldPositions?: TemplateLayoutFieldPositionDTO[];
+  colors?: TemplateLayoutColorSettingsDTO;
+}
+
 export interface EventTemplateDTO {
   documentId: string;
   name: string;
@@ -104,6 +132,8 @@ export interface EventTemplateDTO {
   partitionDocumentIds?: string[];
   fieldCount: number;
   fields: FormFieldConfigDTO[];
+  layoutSettings?: TemplateLayoutSettingsDTO;
+  customCss?: string;
 }
 
 export interface EventSlotDTO {
@@ -182,6 +212,7 @@ export interface EventListItemDTO {
   partitionCode: string;
   partitionDocumentId?: string;
   templateDocumentId?: string;
+  accessType: EventAccessType;
   status: EventStatus;
   registrationStartDate: string;
   registrationEndDate: string;
@@ -197,6 +228,7 @@ export interface EventListItemDTO {
   publicUrl: string;
   qrPayload: string;
   layoutMode?: FormLayoutMode;
+  layoutSettings?: TemplateLayoutSettingsDTO;
   customCss?: string;
 }
 
@@ -205,6 +237,42 @@ export interface EventDetailDTO {
     fields: FormFieldConfigDTO[];
     dates: EventDateDTO[];
     notifications: NotificationTemplateDTO[];
+  };
+}
+
+export interface EformListItemDTO {
+  documentId: string;
+  eformCode: string;
+  companyName: string;
+  companyNameZh?: string;
+  location: string;
+  locationZh?: string;
+  eformName: string;
+  eformNameZh?: string;
+  description?: string;
+  descriptionZh?: string;
+  notes?: string;
+  notesZh?: string;
+  partitionCode: string;
+  partitionDocumentId?: string;
+  templateDocumentId?: string;
+  accessType: EventAccessType;
+  status: EventStatus;
+  eventStartDate: string;
+  eventEndDate: string;
+  showInEventPeriod?: boolean;
+  showInExpired?: boolean;
+  publishedToPortals?: boolean;
+  publicUrl: string;
+  qrPayload: string;
+  layoutMode?: FormLayoutMode;
+  layoutSettings?: TemplateLayoutSettingsDTO;
+  customCss?: string;
+}
+
+export interface EformDetailDTO {
+  eform: EformListItemDTO & {
+    fields: FormFieldConfigDTO[];
   };
 }
 
@@ -275,6 +343,7 @@ export interface DashboardDTO {
 export interface PartitionLandingDTO {
   partition: UserPartitionDTO;
   events: EventListItemDTO[];
+  eforms: EformListItemDTO[];
   documents: PortalDocumentDTO[];
   contacts: ContactInfoDTO[];
 }
@@ -304,6 +373,29 @@ export interface CreateBookingInput {
   registeredEmail?: string;
   mobileNumber?: string;
   communicationPreference: CommunicationPreference;
+  termsAccepted: boolean;
+  formValues?: Record<string, string>;
+}
+
+export interface EformSubmissionDTO {
+  documentId: string;
+  submissionReference: string;
+  eformDocumentId: string;
+  eformName: string;
+  companyName: string;
+  participantName?: string;
+  staffNumber?: string;
+  medicalCardNumber?: string;
+  hkidPrefix?: string;
+  registeredEmail?: string;
+  mobileNumber?: string;
+  submittedAt?: string;
+  portalSource: PortalKind;
+}
+
+export interface CreateEformSubmissionInput {
+  eformDocumentId: string;
+  partitionCode: string;
   termsAccepted: boolean;
   formValues?: Record<string, string>;
 }

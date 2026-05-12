@@ -3,6 +3,7 @@ import { ErpShell } from '../../../components/erp-shell';
 import { getErpLanding } from '../../../lib/erp-api';
 import {
   getErpLanguageFromSearchParams,
+  getLocalizedEformName,
   getLocalizedCompanyName,
   getLocalizedEventName,
   getLocalizedEventStatus,
@@ -25,10 +26,16 @@ export default async function Page({ params, searchParams }: PageProps) {
   const { partitionCode } = await params;
   const language = getErpLanguageFromSearchParams(await searchParams);
   const landing = await getErpLanding(partitionCode);
-  const headerCaption = landing?.partition.groupCompanyName ?? (landing?.events[0] ? getLocalizedCompanyName(landing.events[0], language) : undefined);
+  const headerCaption =
+    landing?.partition.groupCompanyName ??
+    (landing?.events[0]
+      ? getLocalizedCompanyName(landing.events[0], language)
+      : landing?.eforms[0]
+        ? getLocalizedCompanyName(landing.eforms[0], language)
+        : undefined);
   const copy = getPageCopy(language);
 
-  if (!landing || landing.events.length === 0) {
+  if (!landing || (landing.events.length === 0 && landing.eforms.length === 0)) {
     return (
       <ErpShell
         title={copy.title(partitionCode)}
@@ -99,6 +106,27 @@ export default async function Page({ params, searchParams }: PageProps) {
             }))}
           />
         </Card>
+
+        {landing.eforms.length > 0 ? (
+          <Card title={copy.eformListTitle} description={copy.eformListDescription}>
+            <SimpleTable
+              columns={[
+                { key: 'eform', label: copy.eformColumn },
+                { key: 'location', label: copy.locationColumn },
+                { key: 'window', label: copy.eventWindowColumn },
+                { key: 'status', label: copy.statusColumn },
+                { key: 'open', label: copy.openColumn },
+              ]}
+              rows={landing.eforms.map((eform) => ({
+                eform: getLocalizedEformName(eform, language),
+                location: getLocalizedLocation(eform, language),
+                window: `${eform.eventStartDate} → ${eform.eventEndDate}`,
+                status: <StatusBadge value={eform.status} label={getLocalizedEventStatus(eform.status, language)} />,
+                open: <a href={withErpLanguage(eform.publicUrl, language)}>{copy.openEformAction}</a>,
+              }))}
+            />
+          </Card>
+        ) : null}
       </Stack>
     </ErpShell>
   );
@@ -116,12 +144,16 @@ function getPageCopy(language: ErpLanguage) {
       brandingDescription: '此分區上載的品牌素材會顯示給 ERP 訪客。',
       eventListTitle: '活動列表',
       eventListDescription: '選擇活動以查看詳情、可用時段及登記表格。',
+      eformListTitle: '電子表格列表',
+      eformListDescription: '選擇電子表格以開啟不含預約時段的 ERP 表格。',
       eventColumn: '活動',
+      eformColumn: '電子表格',
       locationColumn: '地點',
       eventWindowColumn: '活動日期',
       statusColumn: '狀態',
       openColumn: '開啟',
       registerAction: '登記',
+      openEformAction: '填寫表格',
     };
   }
 
@@ -135,11 +167,15 @@ function getPageCopy(language: ErpLanguage) {
     brandingDescription: 'Assets uploaded for this partition are displayed here for ERP visitors.',
     eventListTitle: 'Event list',
     eventListDescription: 'Choose an event to view its details, available slots, and registration form.',
+    eformListTitle: 'E-form list',
+    eformListDescription: 'Choose an e-form to open a registration form without booking timeslots.',
     eventColumn: 'Event',
+    eformColumn: 'E-Form',
     locationColumn: 'Location',
     eventWindowColumn: 'Event window',
     statusColumn: 'Status',
     openColumn: 'Open',
     registerAction: 'Register',
+    openEformAction: 'Open form',
   };
 }

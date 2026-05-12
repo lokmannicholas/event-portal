@@ -1,14 +1,16 @@
 import { cookies } from 'next/headers';
 
-export type EapCreateDraftKind = 'event' | 'template';
+export type EapCreateDraftKind = 'event' | 'eform' | 'template';
 
 const COOKIE_NAME_BY_KIND: Record<EapCreateDraftKind, string> = {
   event: 'eap_create_draft_event',
+  eform: 'eap_create_draft_eform',
   template: 'eap_create_draft_template',
 };
 
 const COOKIE_PATH_BY_KIND: Record<EapCreateDraftKind, string> = {
   event: '/events/new',
+  eform: '/eforms/new',
   template: '/templates/new',
 };
 
@@ -17,6 +19,7 @@ const COOKIE_MAX_AGE_SECONDS = 10 * 60;
 export type EventCreateDraft = {
   eventName?: string;
   eventCode?: string;
+  accessType?: string;
   companyName?: string;
   location?: string;
   partitionDocumentId?: string;
@@ -43,11 +46,30 @@ export type EventCreateDraft = {
   slotPlanJson?: string;
 };
 
+export type EformCreateDraft = {
+  eformName?: string;
+  eformCode?: string;
+  accessType?: string;
+  companyName?: string;
+  location?: string;
+  partitionDocumentId?: string;
+  templateDocumentId?: string;
+  status?: string;
+  eventStartDate?: string;
+  eventEndDate?: string;
+  showInEventPeriod?: string;
+  showInExpired?: string;
+  description?: string;
+  notes?: string;
+};
+
 export type TemplateCreateDraft = {
   name?: string;
   description?: string;
   partitionDocumentIds?: string[];
   formFieldsJson?: string;
+  layoutSettingsJson?: string;
+  customCss?: string;
 };
 
 async function getCookieStore() {
