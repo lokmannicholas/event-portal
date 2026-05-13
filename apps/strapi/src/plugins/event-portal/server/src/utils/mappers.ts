@@ -84,8 +84,6 @@ export function mapPartition(record: AnyRecord) {
     remarks: record.remarks,
     groupCompanyName: userGroup[0]?.companyName,
     userGroupCodes: userGroup.map((group: any) => group.code).filter(Boolean),
-    templateDocumentId: record.template?.documentId,
-    templateName: record.template?.name,
     logo: mapMedia(record.logo),
     banners: toArray<any>(record.banners).map((banner: any) => mapMedia(banner)).filter(isDefined),
   };
@@ -149,14 +147,11 @@ export function mapField(record: AnyRecord) {
 
 export function mapTemplate(record: AnyRecord) {
   const fields = toArray<any>(record.formFields).map((field: any) => mapField(field));
-  const partitions = toArray<any>(record.userPartitions ?? (record.userPartition ? [record.userPartition] : []));
 
   return {
     documentId: record.documentId,
     name: record.name,
     description: record.description,
-    partitionCodes: partitions.map((partition: any) => partition.code).filter(Boolean),
-    partitionDocumentIds: partitions.map((partition: any) => partition.documentId).filter(Boolean),
     fieldCount: fields.length,
     fields,
     layoutSettings: record.layoutSettings,

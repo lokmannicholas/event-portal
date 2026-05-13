@@ -63,6 +63,16 @@ function getRelationDocumentId(value: EventRelationValue) {
   return typeof value?.documentId === 'string' && value.documentId.trim() ? value.documentId : undefined;
 }
 
+function toSingleRelationConnect(documentId: string | undefined) {
+  if (!documentId) {
+    return undefined;
+  }
+
+  return {
+    connect: [{ documentId }],
+  };
+}
+
 function isDuplicatedEventSlot(value: unknown): value is EventPortalEventSlotPayload {
   if (!value || typeof value !== 'object') {
     return false;
@@ -215,7 +225,6 @@ function buildCreateDraft(kind: EapCreateDraftKind, formData: FormData) {
       return {
         name: getValue(formData, 'name'),
         description: getOptionalValue(formData, 'description'),
-        partitionDocumentIds: getRelationValues(formData, 'partitionDocumentIds'),
         formFieldsJson: getOptionalValue(formData, 'formFieldsJson'),
         layoutSettingsJson: getOptionalValue(formData, 'layoutSettingsJson'),
         customCss: getOptionalValue(formData, 'customCss'),
@@ -317,10 +326,10 @@ async function uploadMediaFiles(files: File[]) {
     '[eap] upload media files response',
     Array.isArray(parsed)
       ? parsed.map((record) => ({
-          id: record.id,
-          documentId: record.documentId,
-          name: record.name,
-        }))
+        id: record.id,
+        documentId: record.documentId,
+        name: record.name,
+      }))
       : parsed,
   );
 
@@ -664,29 +673,6 @@ async function getTemplateRecord(documentId?: string) {
   }
 }
 
-async function getPartitionRecord(documentId?: string) {
-  if (!documentId) {
-    return undefined;
-  }
-
-  try {
-    const response = await eventPortalSdk.userPartitions.findOne(
-      documentId,
-      {
-        populate: ['template'],
-      },
-      {
-        cache: 'no-store',
-        revalidate: false,
-      },
-    );
-
-    return response.data;
-  } catch {
-    return undefined;
-  }
-}
-
 async function getCurrentTemplateFieldKeys(documentId: string) {
   const templateRecord = await getTemplateRecord(documentId);
   const formFields = Array.isArray(templateRecord?.formFields) ? templateRecord.formFields : [];
@@ -704,42 +690,6 @@ function buildEventNoticeTemplateRelations(formData: FormData) {
   };
 }
 
-function getTemplatePartitionDocumentIds(templateRecord: Record<string, any> | undefined) {
-  if (!templateRecord) {
-    return [];
-  }
-
-  const partitions = Array.isArray(templateRecord.userPartitions)
-    ? templateRecord.userPartitions
-    : templateRecord.userPartition
-      ? [templateRecord.userPartition]
-      : [];
-
-  return partitions
-    .map((partition) => (typeof partition?.documentId === 'string' ? partition.documentId : ''))
-    .filter(Boolean);
-}
-
-async function validateTemplatePartitionAssignment(templateRecord: Record<string, any> | undefined, partitionDocumentId?: string) {
-  if (!templateRecord || !partitionDocumentId) {
-    return;
-  }
-
-  const assignedPartitionDocumentIds = getTemplatePartitionDocumentIds(templateRecord);
-
-  if (assignedPartitionDocumentIds.includes(partitionDocumentId)) {
-    return;
-  }
-
-  const partitionRecord = await getPartitionRecord(partitionDocumentId);
-
-  if (partitionRecord?.template?.documentId === templateRecord.documentId) {
-    return;
-  }
-
-  throw new Error('Selected partition is not assigned to the chosen template.');
-}
-
 function getListPath(kind: EapRecordKind) {
   return eapRecordConfig[kind].listPath;
 }
@@ -752,11 +702,11 @@ function getErrorMessage(error: unknown) {
   if (error instanceof StrapiRequestError) {
     const body = error.body as
       | {
-          error?: {
-            message?: string;
-            details?: unknown;
-          };
-        }
+        error?: {
+          message?: string;
+          details?: unknown;
+        };
+      }
       | undefined;
 
     return body?.error?.message || error.message;
@@ -843,7 +793,6 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
         name: getValue(formData, 'name'),
         description: getOptionalValue(formData, 'description'),
         eventTemplateStatus: 'ACTIVE',
-        userPartitions: getRelationValues(formData, 'partitionDocumentIds'),
         formFields,
         ...layoutPayload,
       });
@@ -867,11 +816,9 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
       const showInRegistrationPeriod = getOptionalBooleanValue(formData, 'showInRegistrationPeriod');
       const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
-      const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
       const eventSlots = buildEventSlotPayloads(formData);
       const noticeTemplates = buildEventNoticeTemplateRelations(formData);
-      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -890,8 +837,8 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
         eventAccessType,
         publicBaseUrl: appBaseUrl,
         publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
-        userPartition: partitionDocumentId,
-        template: templateRecord?.documentId,
+        userPartition: toSingleRelationConnect(partitionDocumentId),
+        template: toSingleRelationConnect(getOptionalValue(formData, 'templateDocumentId')),
         ...noticeTemplates,
         eventSlots,
         ...(showInRegistrationPeriod !== undefined ? { showInRegistrationPeriod } : {}),
@@ -909,9 +856,7 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
       const eventAccessType = getValue(formData, 'accessType') as EventAccessType;
       const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
-      const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
-      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -925,8 +870,8 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
         eventAccessType,
         publicBaseUrl: appBaseUrl,
         publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
-        userPartition: partitionDocumentId,
-        template: templateRecord?.documentId,
+        userPartition: toSingleRelationConnect(partitionDocumentId),
+        template: toSingleRelationConnect(getOptionalValue(formData, 'templateDocumentId')),
         ...(showInEventPeriod !== undefined ? { showInEventPeriod } : {}),
         ...(showInExpired !== undefined ? { showInExpired } : {}),
       };
@@ -954,14 +899,16 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
         event: getOptionalValue(formData, 'eventDocumentId'),
       });
     case 'partition':
-      return eventPortalSdk.userPartitions.create({
+      const payload = {
         code: getValue(formData, 'code'),
         description: getValue(formData, 'description'),
         slug: getValue(formData, 'slug'),
         userPartitionStatus: getValue(formData, 'status') as GroupStatus,
         remarks: getOptionalValue(formData, 'remarks'),
         userGroup: getOptionalValue(formData, 'userGroupDocumentId'),
-      });
+      };
+      console.log('create partition payload', payload);
+      return eventPortalSdk.userPartitions.create(payload);
     case 'group':
       {
         const payload = {
@@ -1039,7 +986,6 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
       return eventPortalSdk.eventTemplates.update(documentId, {
         name: getValue(formData, 'name'),
         description: getOptionalValue(formData, 'description'),
-        userPartitions: getRelationValues(formData, 'partitionDocumentIds'),
         formFields,
         ...layoutPayload,
       });
@@ -1064,9 +1010,7 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
       const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
       const noticeTemplates = buildEventNoticeTemplateRelations(formData);
-      const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
-      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -1085,8 +1029,8 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
         eventAccessType,
         publicBaseUrl: appBaseUrl,
         publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
-        userPartition: partitionDocumentId,
-        template: templateRecord?.documentId,
+        userPartition: toSingleRelationConnect(partitionDocumentId),
+        template: toSingleRelationConnect(getOptionalValue(formData, 'templateDocumentId')),
         ...noticeTemplates,
         eventSlots: buildEventSlotPayloads(formData),
         ...(showInRegistrationPeriod !== undefined ? { showInRegistrationPeriod } : {}),
@@ -1104,9 +1048,7 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
       const eventAccessType = getValue(formData, 'accessType') as EventAccessType;
       const showInEventPeriod = getOptionalBooleanValue(formData, 'showInEventPeriod');
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
-      const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
-      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -1120,8 +1062,8 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
         eventAccessType,
         publicBaseUrl: appBaseUrl,
         publishedToPortals: getPublishedToPortalsForStatus(eventStatus),
-        userPartition: partitionDocumentId,
-        template: templateRecord?.documentId,
+        userPartition: toSingleRelationConnect(partitionDocumentId),
+        template: toSingleRelationConnect(getOptionalValue(formData, 'templateDocumentId')),
         ...(showInEventPeriod !== undefined ? { showInEventPeriod } : {}),
         ...(showInExpired !== undefined ? { showInExpired } : {}),
       };
@@ -1408,8 +1350,8 @@ export async function duplicateEventAction(sourceDocumentId: string) {
         emailRegistrationNoticeTemplate: getRelationDocumentId(source.emailRegistrationNoticeTemplate),
         emailAnnouncementNoticeTemplate: getRelationDocumentId(source.emailAnnouncementNoticeTemplate),
         emailEventUpdateNoticeTemplate: getRelationDocumentId(source.emailEventUpdateNoticeTemplate),
-        userPartition: getRelationDocumentId(source.userPartition),
-        template: getRelationDocumentId(source.template),
+        userPartition: toSingleRelationConnect(getRelationDocumentId(source.userPartition)),
+        template: toSingleRelationConnect(getRelationDocumentId(source.template)),
         eventSlots: (Array.isArray(source.slots) ? source.slots : []).reduce<EventPortalEventSlotPayload[]>((result, slot) => {
           if (isDuplicatedEventSlot(slot)) {
             result.push({

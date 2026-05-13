@@ -653,7 +653,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const records = (await strapi.documents('plugin::event-portal.user-partition').findMany({
       populate: {
         userGroup: true,
-        template: true,
       },
       sort: ['code:asc'],
       limit: 200,
@@ -761,7 +760,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async eapTemplates() {
     const records = (await strapi.documents('plugin::event-portal.event-template').findMany({
       populate: {
-        userPartitions: true,
         formFields: true,
       },
       sort: ['name:asc'],
@@ -1210,7 +1208,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const template = (await strapi.documents('plugin::event-portal.event-template').findOne({
       documentId,
       populate: {
-        userPartitions: true,
         formFields: true,
       },
     })) as AnyRecord | null;

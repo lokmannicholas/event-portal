@@ -66,7 +66,6 @@ export type EformCreateDraft = {
 export type TemplateCreateDraft = {
   name?: string;
   description?: string;
-  partitionDocumentIds?: string[];
   formFieldsJson?: string;
   layoutSettingsJson?: string;
   customCss?: string;

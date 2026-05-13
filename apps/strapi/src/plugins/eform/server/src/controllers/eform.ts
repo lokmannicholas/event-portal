@@ -5,11 +5,13 @@ const uid = 'plugin::eform.eform' as any;
 
 export default factories.createCoreController(uid, ({ strapi }) => ({
   async create(ctx: any) {
+    ctx.state.auth = false;
     ctx.request.body = normalizeContentTypePayload(strapi, uid, ctx.request.body).body;
     return await super.create(ctx);
   },
 
   async update(ctx: any) {
+    ctx.state.auth = false;
     ctx.request.body = normalizeContentTypePayload(strapi, uid, ctx.request.body).body;
     return await super.update(ctx);
   },

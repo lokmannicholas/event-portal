@@ -27,12 +27,6 @@ export default {
       ],
       "default": "ACTIVE"
     },
-    "userPartitions": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "plugin::event-portal.user-partition",
-      "mappedBy": "template"
-    },
     "formFields": {
       "type": "component",
       "repeatable": true,

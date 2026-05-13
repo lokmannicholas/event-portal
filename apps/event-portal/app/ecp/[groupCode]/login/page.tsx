@@ -31,10 +31,8 @@ export default async function Page({ params, searchParams }: PageProps) {
   const language = await getPortalLanguageFromCookies();
   const copy = {
     title: getPortalText(language, 'Login', '登入'),
-    subtitle: getPortalText(language, 'Sign in with a Strapi users-permissions account set to CLIENT_HR and linked to this same group.', '請使用 portalRole 設為 CLIENT_HR 並連結到此群組的 Strapi users-permissions 帳戶登入。'),
     accessStatus: getPortalText(language, 'Access status', '存取狀態'),
     signIn: getPortalText(language, 'Sign in', '登入'),
-    description: getPortalText(language, 'This login calls Strapi `auth/local` and only allows active users with `portalRole=CLIENT_HR` and a linked group code matching the current URL.', '此登入流程會呼叫 Strapi `auth/local`，並只允許 `portalRole=CLIENT_HR` 且連結群組代碼與目前網址相符的啟用用戶登入。'),
     identifier: getPortalText(language, 'Email or username', '電郵或用戶名稱'),
     password: getPortalText(language, 'Password', '密碼'),
   };
@@ -43,7 +41,6 @@ export default async function Page({ params, searchParams }: PageProps) {
   return (
     <EcpShell
       title={copy.title}
-      subtitle={copy.subtitle}
       groupCode={groupCode}
       requireAuth={false}
       hideNav
@@ -52,7 +49,7 @@ export default async function Page({ params, searchParams }: PageProps) {
       <Stack>
         {message ? <InlineNotice title={copy.accessStatus}>{message}</InlineNotice> : null}
 
-        <Card title={copy.signIn} description={copy.description}>
+        <Card title={copy.signIn}>
           <form action={loginEcpAction} className="portal-form-stack portal-form-stack-compact">
             <input type="hidden" name="groupCode" value={groupCode} />
             <label className="portal-field">

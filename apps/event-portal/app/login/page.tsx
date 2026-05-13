@@ -30,18 +30,8 @@ export default async function Page({ searchParams }: PageProps) {
   const language = await getPortalLanguageFromCookies();
   const copy = {
     title: getPortalText(language, 'Login', '登入'),
-    subtitle: getPortalText(
-      language,
-      'Sign in with a Strapi users-permissions account configured with portalRole ADMIN before opening the admin portal.',
-      '進入管理入口前，請先使用已設定 portalRole ADMIN 的 Strapi users-permissions 帳戶登入。',
-    ),
     accessStatus: getPortalText(language, 'Access status', '存取狀態'),
     signIn: getPortalText(language, 'Sign in', '登入'),
-    description: getPortalText(
-      language,
-      'This login calls Strapi `/api/auth/local` from the browser using `NEXT_PUBLIC_STRAPI_URL`, then establishes the EAP session only for active users whose `portalRole=ADMIN`.',
-      '此登入流程會在瀏覽器內透過 `NEXT_PUBLIC_STRAPI_URL` 呼叫 Strapi `/api/auth/local`，然後只為 `portalRole=ADMIN` 的啟用用戶建立 EAP 工作階段。',
-    ),
   };
 
   const message = getReasonMessage(query?.reason, language);
@@ -49,7 +39,6 @@ export default async function Page({ searchParams }: PageProps) {
   return (
     <EapShell
       title={copy.title}
-      subtitle={copy.subtitle}
       requireAuth={false}
       hideNav
       hideAside
@@ -57,7 +46,7 @@ export default async function Page({ searchParams }: PageProps) {
       <Stack>
         {message ? <InlineNotice title={copy.accessStatus}>{message}</InlineNotice> : null}
 
-        <Card title={copy.signIn} description={copy.description}>
+        <Card title={copy.signIn}>
           <EapLoginForm initialMessage={message} language={language} />
         </Card>
       </Stack>

@@ -1,11 +1,11 @@
 import { Card, SimpleTable, Stack } from '@event-portal/ui';
 import { createRecordAction } from '../../actions/eap-record-actions';
-import { ActionLink, ActionRow, ChipMultiSelectField, Field, FormGrid, NoticeBanner, SubmitRow, TextAreaField } from '../../../components/admin-forms';
+import { ActionLink, ActionRow, Field, FormGrid, NoticeBanner, SubmitRow, TextAreaField } from '../../../components/admin-forms';
 import { EapShell } from '../../../components/eap-shell';
 import { TemplateFormFieldsEditor } from '../../../components/template-form-fields-editor';
 import type { TemplateCreateDraft } from '../../../lib/eap-create-drafts';
 import { readCreateDraft } from '../../../lib/eap-create-drafts';
-import { getMandatoryFieldLibrary, getPartitions } from '../../../lib/api';
+import { getMandatoryFieldLibrary } from '../../../lib/api';
 import type { NoticeQuery } from '../../../lib/eap-records';
 
 type PageProps = {
@@ -15,32 +15,22 @@ type PageProps = {
 export default async function Page({ searchParams }: PageProps) {
   const query = (await searchParams) ?? {};
   const draft = query.notice === 'create-failed' ? await readCreateDraft<TemplateCreateDraft>('template') : undefined;
-  const [partitionRows, mandatoryFields] = await Promise.all([getPartitions(), getMandatoryFieldLibrary()]);
+  const mandatoryFields = await getMandatoryFieldLibrary();
 
   return (
-    <EapShell title="Create Template" subtitle="Create a new event template record with reusable form fields and partition assignment.">
+    <EapShell title="Create Template" subtitle="Create a new event template record with reusable form fields.">
       <Stack>
         <ActionRow>
           <ActionLink href="/templates" label="Back to Template Master" variant="secondary" />
         </ActionRow>
         <NoticeBanner code={query.notice} title={query.title} description={query.message} />
 
-        <Card title="Template setup" description="Templates now define reusable registration form fields and the partitions that can use them.">
+        <Card title="Template setup" description="Templates define reusable registration form fields and layout settings for events and e-forms.">
           <form action={createRecordAction.bind(null, 'template')}>
             <Stack gap={16}>
               <FormGrid>
                 <Field label="Template name" name="name" defaultValue={draft?.name} required />
               </FormGrid>
-
-              <ChipMultiSelectField
-                label="Partitions"
-                name="partitionDocumentIds"
-                defaultValue={draft?.partitionDocumentIds}
-                helperText="A template can be linked to multiple partitions. Each partition can only be linked to one template."
-                itemLabelSingular="partition"
-                itemLabelPlural="partitions"
-                options={partitionRows.map((item) => ({ value: item.documentId, label: `${item.code} · ${item.description}` }))}
-              />
 
               <TextAreaField label="Template description" name="description" defaultValue={draft?.description} rows={3} />
 

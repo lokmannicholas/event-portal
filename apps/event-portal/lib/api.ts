@@ -129,8 +129,6 @@ function mapPartition(record: AnyRecord): UserPartitionDTO {
     groupCompanyName: userGroup[0]?.companyName,
     userGroupCodes: userGroup.map((group) => group.code).filter(Boolean),
     userGroupDocumentIds: userGroup.map((group) => group.documentId).filter(Boolean),
-    templateDocumentId: record.template?.documentId,
-    templateName: record.template?.name,
     logo: mapMedia(record.logo),
     banners: toArray<any>(record.banners).map((banner) => mapMedia(banner)).filter(isDefined),
   };
@@ -183,7 +181,6 @@ function mapUserAccount(record: AnyRecord): UserAccountDTO {
 
 function mapTemplate(record: AnyRecord): EventTemplateDTO {
   const fields = toArray<any>(record.formFields).map((field) => mapField(field));
-  const partitions = toArray<any>(record.userPartitions ?? (record.userPartition ? [record.userPartition] : []));
   const layoutSettings = normalizeTemplateLayoutSettings(
     fields.map((field) => field.fieldKey),
     record.layoutSettings,
@@ -193,8 +190,6 @@ function mapTemplate(record: AnyRecord): EventTemplateDTO {
     documentId: record.documentId,
     name: record.name,
     description: record.description,
-    partitionCodes: partitions.map((partition) => partition.code).filter(Boolean),
-    partitionDocumentIds: partitions.map((partition) => partition.documentId).filter(Boolean),
     fieldCount: fields.length,
     fields,
     layoutSettings,

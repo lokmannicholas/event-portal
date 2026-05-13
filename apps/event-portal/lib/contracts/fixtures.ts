@@ -102,8 +102,6 @@ export const partitions: UserPartitionDTO[] = [
     status: 'ACTIVE',
     remarks: 'Primary HSBC public ERP partition.',
     userGroupCodes: ['QHMS', 'HSBC-HR'],
-    templateDocumentId: 'template-hsbc-2026-flu',
-    templateName: 'HSBC 2026 Annual Event Template',
     logo: {
       documentId: 'media-hsbc-logo',
       name: 'hsbc-logo.png',
@@ -131,8 +129,6 @@ export const partitions: UserPartitionDTO[] = [
     status: 'ACTIVE',
     remarks: 'HASE staff ERP entry scope.',
     userGroupCodes: ['QHMS', 'HASE-HR'],
-    templateDocumentId: 'template-hsbc-2026-flu',
-    templateName: 'HSBC 2026 Annual Event Template',
     banners: [],
   },
 ];
@@ -215,8 +211,6 @@ export const templates: EventTemplateDTO[] = [
     documentId: 'template-hsbc-2026-flu',
     name: 'HSBC 2026 Annual Event Template',
     description: 'Annual employee event template',
-    partitionCodes: ['HSBC-FLU', 'HASE-FLU'],
-    partitionDocumentIds: ['partition-hsbc-flu', 'partition-hase-flu'],
     fieldCount: systemFields.length,
     fields: systemFields,
   },

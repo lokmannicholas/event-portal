@@ -82,7 +82,7 @@ export default async function Page({ params, searchParams }: PageProps) {
                       name="templateDocumentId"
                       defaultValue={eform.templateDocumentId}
                       required
-                      options={templateRows.map((item) => ({ value: item.documentId, label: `${item.name} · ${item.partitionCodes.join(', ') || 'No partitions'}` }))}
+                      options={templateRows.map((item) => ({ value: item.documentId, label: item.name }))}
                     />
                     <SelectField
                       label="Status"

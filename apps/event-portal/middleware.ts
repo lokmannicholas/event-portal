@@ -8,6 +8,8 @@ import {
 
 const EAP_SESSION_COOKIE = 'eap_session';
 const ECP_SESSION_COOKIE = 'ecp_session';
+const PORTAL_CONTEXT_HEADER = 'x-portal-context';
+const PORTAL_GROUP_CODE_HEADER = 'x-portal-group-code';
 
 type EapSessionPayload = {
   portalRole?: string;
@@ -110,6 +112,27 @@ function applyPortalLanguagePreference(request: NextRequest, response: NextRespo
   return response;
 }
 
+function continueWithPortalContext(
+  request: NextRequest,
+  portalContext: 'EAP' | 'ECP' | 'PUBLIC',
+  groupCode?: string | null,
+) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(PORTAL_CONTEXT_HEADER, portalContext);
+
+  if (groupCode) {
+    requestHeaders.set(PORTAL_GROUP_CODE_HEADER, groupCode);
+  } else {
+    requestHeaders.delete(PORTAL_GROUP_CODE_HEADER);
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
 function isPublicPath(pathname: string) {
   if (pathname === '/login' || pathname === '/ecp' || pathname.startsWith('/p/')) {
     return true;
@@ -139,24 +162,24 @@ export async function middleware(request: NextRequest) {
       return applyPortalLanguagePreference(request, redirectTo(request, '/'));
     }
 
-    return applyPortalLanguagePreference(request, NextResponse.next());
+    return applyPortalLanguagePreference(request, continueWithPortalContext(request, 'EAP'));
   }
 
   const ecpGroupCode = getEcpGroupCode(pathname);
 
   if (ecpGroupCode && pathname === `/ecp/${ecpGroupCode}/login`) {
-    return applyPortalLanguagePreference(request, NextResponse.next());
+    return applyPortalLanguagePreference(request, continueWithPortalContext(request, 'ECP', ecpGroupCode));
   }
 
   if (isPublicPath(pathname)) {
-    return applyPortalLanguagePreference(request, NextResponse.next());
+    return applyPortalLanguagePreference(request, continueWithPortalContext(request, 'PUBLIC'));
   }
 
   if (ecpGroupCode) {
     const session = await verifySignedSession<EcpSessionPayload>(request.cookies.get(ECP_SESSION_COOKIE)?.value);
 
     if (session?.portalRole === 'CLIENT_HR' && session.groupCode === ecpGroupCode) {
-      return applyPortalLanguagePreference(request, NextResponse.next());
+      return applyPortalLanguagePreference(request, continueWithPortalContext(request, 'ECP', ecpGroupCode));
     }
 
     return applyPortalLanguagePreference(request, redirectTo(request, `/ecp/${ecpGroupCode}/login?reason=auth-required`));
@@ -165,7 +188,7 @@ export async function middleware(request: NextRequest) {
   const session = await verifySignedSession<EapSessionPayload>(request.cookies.get(EAP_SESSION_COOKIE)?.value);
 
   if (session?.portalRole === 'ADMIN') {
-    return applyPortalLanguagePreference(request, NextResponse.next());
+    return applyPortalLanguagePreference(request, continueWithPortalContext(request, 'EAP'));
   }
 
   return applyPortalLanguagePreference(request, redirectTo(request, '/login?reason=auth-required'));

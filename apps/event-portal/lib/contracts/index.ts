@@ -43,8 +43,6 @@ export interface UserPartitionDTO {
   groupCompanyName?: string;
   userGroupCodes: string[];
   userGroupDocumentIds?: string[];
-  templateDocumentId?: string;
-  templateName?: string;
   logo?: MediaAssetDTO;
   banners: MediaAssetDTO[];
 }
@@ -129,8 +127,6 @@ export interface EventTemplateDTO {
   documentId: string;
   name: string;
   description?: string;
-  partitionCodes: string[];
-  partitionDocumentIds?: string[];
   fieldCount: number;
   fields: FormFieldConfigDTO[];
   layoutSettings?: TemplateLayoutSettingsDTO;

@@ -19,8 +19,14 @@ export interface StrapiDocumentBase extends StrapiDocumentIdentity {
 export type StrapiRelation<T extends StrapiDocumentIdentity> = T | StrapiDocumentIdentity;
 export type StrapiOneRelation<T extends StrapiDocumentIdentity> = StrapiRelation<T> | null;
 export type StrapiManyRelation<T extends StrapiDocumentIdentity> = Array<StrapiRelation<T>>;
-export type StrapiRelationInput = string | { documentId: string } | null;
-export type StrapiManyRelationInput = Array<string | { documentId: string }>;
+export type StrapiRelationReferenceInput = string | { documentId: string };
+export type StrapiRelationOperationInput = {
+  connect?: StrapiRelationReferenceInput[];
+  disconnect?: StrapiRelationReferenceInput[];
+  set?: StrapiRelationReferenceInput[];
+};
+export type StrapiRelationInput = StrapiRelationReferenceInput | StrapiRelationOperationInput | null;
+export type StrapiManyRelationInput = Array<StrapiRelationReferenceInput> | StrapiRelationOperationInput;
 export type StrapiMediaInput = number | string | { id: number } | { documentId: string } | null;
 export type StrapiManyMediaInput = Array<number | string | { id: number } | { documentId: string }>;
 
@@ -187,7 +193,6 @@ export interface EventPortalEventTemplateEntity extends StrapiDocumentBase {
   name: string;
   description?: string;
   eventTemplateStatus?: EventPortalTemplateStatus;
-  userPartitions?: StrapiManyRelation<EventPortalUserPartitionEntity>;
   formFields?: EventPortalFieldConfigComponent[];
   layoutSettings?: EventPortalJsonValue;
   customCss?: string;
@@ -358,7 +363,6 @@ export interface EventPortalUserPartitionEntity extends StrapiDocumentBase {
   userGroup?: StrapiOneRelation<EventPortalUserGroupEntity>;
   events?: StrapiManyRelation<EventPortalEventEntity>;
   eforms?: StrapiManyRelation<EventPortalEformEntity>;
-  template?: StrapiOneRelation<EventPortalEventTemplateEntity>;
   portalDocuments?: StrapiManyRelation<EventPortalPortalDocumentEntity>;
   contactInfos?: StrapiManyRelation<EventPortalContactInfoEntity>;
 }
@@ -485,7 +489,6 @@ export interface EventPortalEventTemplateCreateInput {
   name: string;
   description?: string;
   eventTemplateStatus?: EventPortalTemplateStatus;
-  userPartitions?: StrapiManyRelationInput;
   formFields?: EventPortalFieldConfigComponent[];
   layoutSettings?: EventPortalJsonValue;
   customCss?: string;
@@ -696,7 +699,6 @@ export interface EventPortalUserPartitionCreateInput {
   userGroup?: StrapiRelationInput;
   events?: StrapiManyRelationInput;
   eforms?: StrapiManyRelationInput;
-  template?: StrapiRelationInput;
   portalDocuments?: StrapiManyRelationInput;
   contactInfos?: StrapiManyRelationInput;
 }

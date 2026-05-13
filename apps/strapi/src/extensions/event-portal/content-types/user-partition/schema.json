@@ -28,11 +28,11 @@
     },
     "userPartitionStatus": {
       "type": "enumeration",
+      "default": "ACTIVE",
       "enum": [
         "ACTIVE",
         "DISABLED"
-      ],
-      "default": "ACTIVE"
+      ]
     },
     "remarks": {
       "type": "text"

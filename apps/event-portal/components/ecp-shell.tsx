@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InlineNotice, PortalShell } from '@event-portal/ui';
+import { PortalShell } from '@event-portal/ui';
 import { changeEcpPasswordAction } from '../app/actions/portal-account-actions';
 import { buildEcpNav } from '../lib/ecp-nav';
 import { logoutEcpAction } from '../app/actions/ecp-auth-actions';
@@ -38,12 +38,6 @@ export async function EcpShell(props: {
     roleLabel: getPortalText(language, 'Portal role', '入口角色'),
     groupLabel: getPortalText(language, 'Group', '群組'),
     logout: getPortalText(language, 'Logout', '登出'),
-    clientScopeTitle: getPortalText(language, 'Client scope', '客戶範圍'),
-    clientScopeBody: getPortalText(
-      language,
-      'This portal is group-scoped. Sign-in uses Strapi `users-permissions`, and access requires a user with `portalRole=CLIENT_HR` whose linked group code matches the `/ecp/HSBC-HR` style path.',
-      '此入口以群組為範圍。登入使用 Strapi `users-permissions`，而存取權限要求用戶的 `portalRole=CLIENT_HR`，且其連結群組代碼需與 `/ecp/HSBC-HR` 這類路徑一致。',
-    ),
   };
 
   return (
@@ -83,13 +77,6 @@ export async function EcpShell(props: {
               </form>
           </PortalUserMenu>
         ) : null
-      }
-      asideNote={
-        <div className="portal-sidebar-stack">
-          <InlineNotice title={copy.clientScopeTitle}>
-            {copy.clientScopeBody}
-          </InlineNotice>
-        </div>
       }
     >
       {props.children}

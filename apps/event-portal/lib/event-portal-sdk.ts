@@ -150,24 +150,24 @@ export interface StrapiAuthClient {
 export const eventPortalQueries = {
   partitionList(): StrapiQueryParams {
     return {
-      populate: ['userGroup', 'template', 'logo', 'banners'],
+      populate: ['userGroup', 'logo', 'banners'],
       sort: ['code:asc'],
     };
   },
   partitionDetail(): StrapiQueryParams {
     return {
-      populate: ['userGroup', 'template', 'logo', 'banners'],
+      populate: ['userGroup', 'logo', 'banners'],
     };
   },
   templateList(): StrapiQueryParams {
     return {
-      populate: ['userPartitions', 'formFields'],
+      populate: ['formFields'],
       sort: ['name:asc'],
     };
   },
   templateDetail(): StrapiQueryParams {
     return {
-      populate: ['userPartitions', 'formFields'],
+      populate: ['formFields'],
     };
   },
 };

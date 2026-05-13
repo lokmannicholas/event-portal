@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InlineNotice, PortalShell } from '@event-portal/ui';
+import { PortalShell } from '@event-portal/ui';
 import { changeEapPasswordAction } from '../app/actions/portal-account-actions';
 import { logoutEapAction } from '../app/actions/eap-auth-actions';
 import { requireEapSession } from '../lib/eap-auth';
@@ -19,12 +19,6 @@ export async function EapShell(props: { title: string; subtitle?: string; childr
     languageSwitcherLabel: getPortalText(language, 'Change language', '切換語言'),
     roleLabel: getPortalText(language, 'Portal role', '入口角色'),
     logout: getPortalText(language, 'Logout', '登出'),
-    implementationNoteTitle: getPortalText(language, 'Implementation note', '系統說明'),
-    implementationNoteBody: getPortalText(
-      language,
-      'EAP sign-in uses Strapi `users-permissions` accounts. Only active users with `portalRole=ADMIN` can open the admin routes.',
-      'EAP 使用 Strapi `users-permissions` 帳戶登入。只有 `portalRole=ADMIN` 的啟用用戶可進入管理路由。',
-    ),
   };
 
   return (
@@ -59,13 +53,6 @@ export async function EapShell(props: { title: string; subtitle?: string; childr
               </form>
           </PortalUserMenu>
         ) : null
-      }
-      asideNote={
-        <div className="portal-sidebar-stack">
-          <InlineNotice title={copy.implementationNoteTitle}>
-            {copy.implementationNoteBody}
-          </InlineNotice>
-        </div>
       }
     >
       {props.children}

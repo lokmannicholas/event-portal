@@ -104,6 +104,34 @@ function normalizeRelationValue(value: unknown): RelationValue | unknown {
   return Object.keys(normalized).length > 0 ? normalized : normalizeRelationIdentifier(value);
 }
 
+function isToManyRelation(relation: string | undefined) {
+  return relation === 'oneToMany' || relation === 'manyToMany' || relation === 'morphMany' || relation === 'morphToMany';
+}
+
+function toRelationOperation(attribute: SchemaAttribute, value: unknown): RelationValue | unknown {
+  const normalizedValue = normalizeRelationValue(value);
+
+  if (normalizedValue === null || isRelationOperation(normalizedValue as RelationValue)) {
+    return normalizedValue;
+  }
+
+  if (Array.isArray(normalizedValue)) {
+    return {
+      set: normalizedValue,
+    } satisfies RelationOperation;
+  }
+
+  if (attribute.relation && isToManyRelation(attribute.relation)) {
+    return {
+      set: [normalizedValue as RelationIdentifier],
+    } satisfies RelationOperation;
+  }
+
+  return {
+    connect: [normalizedValue as RelationIdentifier],
+  } satisfies RelationOperation;
+}
+
 function getStatusFieldName(attributes: Record<string, SchemaAttribute>) {
   const matches = Object.entries(attributes)
     .filter(([key, attribute]) => key.endsWith('Status') && attribute.type === 'enumeration')
@@ -153,7 +181,7 @@ export function normalizeContentTypePayload(strapi: Core.Strapi, uid: string, bo
       continue;
     }
 
-    const normalizedValue = normalizeRelationValue(value);
+    const normalizedValue = toRelationOperation(attribute, value);
 
     if (attribute.mappedBy && attribute.target) {
       inverseRelations.push({

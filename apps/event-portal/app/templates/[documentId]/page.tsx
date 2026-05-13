@@ -1,9 +1,9 @@
 import { Card, EmptyState, KeyValueList, SimpleTable, SplitGrid, Stack } from '@event-portal/ui';
 import { updateRecordAction } from '../../actions/eap-record-actions';
-import { ActionLink, ActionRow, ChipMultiSelectField, Field, FormGrid, NoticeBanner, SubmitRow, TextAreaField } from '../../../components/admin-forms';
+import { ActionLink, ActionRow, Field, FormGrid, NoticeBanner, SubmitRow, TextAreaField } from '../../../components/admin-forms';
 import { EapShell } from '../../../components/eap-shell';
 import { TemplateFormFieldsEditor } from '../../../components/template-form-fields-editor';
-import { getMandatoryFieldLibrary, getPartitions, getTemplate } from '../../../lib/api';
+import { getMandatoryFieldLibrary, getTemplate } from '../../../lib/api';
 import type { NoticeQuery } from '../../../lib/eap-records';
 import { mergeTemplateFields } from '../../../lib/template-form-fields';
 
@@ -14,7 +14,7 @@ type PageProps = {
 
 export default async function Page({ params, searchParams }: PageProps) {
   const [{ documentId }, query] = await Promise.all([params, searchParams]);
-  const [record, partitionRows, mandatoryFields] = await Promise.all([getTemplate(documentId), getPartitions(), getMandatoryFieldLibrary()]);
+  const [record, mandatoryFields] = await Promise.all([getTemplate(documentId), getMandatoryFieldLibrary()]);
 
   if (!record) {
     return (
@@ -33,7 +33,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const hasCustomLayout = Boolean(record.layoutSettings || record.customCss);
 
   return (
-    <EapShell title={record.name} subtitle="Update the reusable form fields and partition assignment for this template.">
+    <EapShell title={record.name} subtitle="Update the reusable form fields and layout snapshot for this template.">
       <Stack>
         <ActionRow>
           <ActionLink href="/templates" label="Back to Template Master" variant="secondary" />
@@ -44,7 +44,7 @@ export default async function Page({ params, searchParams }: PageProps) {
 
         <SplitGrid
           left={
-            <Card title="Template detail" description="This record controls the field list and partition assignment used by registration forms.">
+            <Card title="Template detail" description="This record controls the reusable field list used by registration forms.">
               <form action={updateRecordAction.bind(null, 'template', record.documentId)}>
                 <Stack gap={16}>
                   <input type="hidden" name="layoutSettingsJson" value={record.layoutSettings ? JSON.stringify(record.layoutSettings) : ''} readOnly />
@@ -52,16 +52,6 @@ export default async function Page({ params, searchParams }: PageProps) {
                   <FormGrid>
                     <Field label="Template name" name="name" defaultValue={record.name} required />
                   </FormGrid>
-
-                  <ChipMultiSelectField
-                    label="Partitions"
-                    name="partitionDocumentIds"
-                    defaultValue={record.partitionDocumentIds}
-                    helperText="A template can be linked to multiple partitions. Each partition can only be linked to one template."
-                    itemLabelSingular="partition"
-                    itemLabelPlural="partitions"
-                    options={partitionRows.map((item) => ({ value: item.documentId, label: `${item.code} · ${item.description}` }))}
-                  />
 
                   <TextAreaField label="Template description" name="description" defaultValue={record.description} rows={3} />
 
@@ -80,13 +70,12 @@ export default async function Page({ params, searchParams }: PageProps) {
           }
           right={
             <Card title="Template summary" description="This is the current template record snapshot.">
-              <KeyValueList
-                items={[
-                  { label: 'Document id', value: record.documentId },
-                  { label: 'Partitions', value: record.partitionCodes.join(', ') || '-' },
-                  { label: 'Fields', value: String(editableFields.length) },
-                  { label: 'ERP layout', value: hasCustomLayout ? 'Custom' : 'Default' },
-                ]}
+                <KeyValueList
+                  items={[
+                    { label: 'Document id', value: record.documentId },
+                    { label: 'Fields', value: String(editableFields.length) },
+                    { label: 'ERP layout', value: hasCustomLayout ? 'Custom' : 'Default' },
+                  ]}
               />
             </Card>
           }

@@ -51,12 +51,6 @@ export default {
         "images"
       ]
     },
-    "userGroup": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::event-portal.user-group",
-      "inversedBy": "partitions"
-    },
     "events": {
       "type": "relation",
       "relation": "oneToMany",
@@ -69,11 +63,11 @@ export default {
       "target": "plugin::eform.eform",
       "mappedBy": "userPartition"
     },
-    "template": {
+    "userGroup": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::event-portal.event-template",
-      "inversedBy": "userPartitions"
+      "target": "plugin::event-portal.user-group",
+      "inversedBy": "partitions"
     },
     "portalDocuments": {
       "type": "relation",

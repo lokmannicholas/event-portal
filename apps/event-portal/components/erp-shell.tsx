@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { InlineNotice, PortalShell } from '@event-portal/ui';
+import { PortalShell } from '@event-portal/ui';
 import { buildErpNav } from '../lib/erp-nav';
 import { ERP_LANGUAGE_QUERY_PARAM, type ErpLanguage } from '../lib/erp-language';
 import { getErpLanding } from '../lib/erp-api';
@@ -23,10 +23,6 @@ export async function ErpShell(props: {
     portalName: isZh ? '活動登記入口（ERP）' : 'Event Registration Portal (ERP)',
     publicSectionLabel: isZh ? 'ERP 公開入口' : 'ERP Public Portal',
     publicNavAriaLabel: isZh ? '入口導覽' : 'Portal navigation',
-    publicAccessTitle: isZh ? '公開存取' : 'Public access',
-    publicAccessBody: isZh
-      ? 'ERP 活動連結可設定為公開或私人路徑，例如 `/e/public/550e8400-e29b-41d4-a716-446655440000` 或 `/e/private/550e8400-e29b-41d4-a716-446655440000`。'
-      : 'ERP event links can be configured as public or private paths, for example `/e/public/550e8400-e29b-41d4-a716-446655440000` or `/e/private/550e8400-e29b-41d4-a716-446655440000`.',
     languageSwitcherLabel: isZh ? '切換語言' : 'Change language',
   };
 
@@ -53,13 +49,6 @@ export async function ErpShell(props: {
             { value: 'zh-Hant', label: '繁中' },
           ]}
         />
-      }
-      asideNote={
-        <div className="portal-sidebar-stack">
-          <InlineNotice title={copy.publicAccessTitle}>
-            {copy.publicAccessBody}
-          </InlineNotice>
-        </div>
       }
     >
       {props.children}

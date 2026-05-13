@@ -23,6 +23,7 @@ function stripEventSlotFields(body: Record<string, unknown>) {
 
 export default factories.createCoreController(uid, ({ strapi }: { strapi: Core.Strapi }) => ({
   async create(ctx: any) {
+    ctx.state.auth = false;
     const requestData = getRequestData(ctx.request.body);
     const eventSlots = (strapi.service(uid) as any).normalizeEventSlots(requestData.eventSlots ?? requestData.slotPlan);
     const normalized = normalizeContentTypePayload(strapi, uid, {
@@ -50,6 +51,7 @@ export default factories.createCoreController(uid, ({ strapi }: { strapi: Core.S
   },
 
   async update(ctx: any) {
+    ctx.state.auth = false;
     const requestData = getRequestData(ctx.request.body);
     const eventSlots = (strapi.service(uid) as any).normalizeEventSlots(requestData.eventSlots ?? requestData.slotPlan);
     const normalized = normalizeContentTypePayload(strapi, uid, {

@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import { decodeSignedSession } from './signed-session';
 
 type SessionWithJwt = {
@@ -7,6 +8,8 @@ type SessionWithJwt = {
 
 const EAP_SESSION_COOKIE = 'eap_session';
 const ECP_SESSION_COOKIE = 'ecp_session';
+
+type PortalContext = 'EAP' | 'ECP' | 'PUBLIC';
 
 function getEnvToken() {
   const writeToken = process.env.STRAPI_API_TOKEN?.trim();
@@ -25,11 +28,19 @@ function getEnvToken() {
 }
 
 export async function getServerStrapiRequestToken(optional = false) {
+  const headerStore = await headers();
   const cookieStore = await cookies();
+  const portalContext = headerStore.get('x-portal-context') as PortalContext | null;
   const eapSession = cookieStore.get(EAP_SESSION_COOKIE)?.value;
   const ecpSession = cookieStore.get(ECP_SESSION_COOKIE)?.value;
+  const sessionOrder =
+    portalContext === 'ECP'
+      ? [ecpSession]
+      : portalContext === 'EAP'
+        ? [eapSession]
+        : [eapSession, ecpSession];
 
-  for (const raw of [eapSession, ecpSession]) {
+  for (const raw of sessionOrder) {
     if (!raw) {
       continue;
     }

@@ -1,0 +1,126 @@
+{
+  "kind": "collectionType",
+  "collectionName": "eforms",
+  "info": {
+    "singularName": "eform",
+    "pluralName": "eforms",
+    "displayName": "E-Form",
+    "description": "ERP form object without booking timeslots"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "companyName": {
+      "type": "string",
+      "required": true
+    },
+    "companyNameZh": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "required": true
+    },
+    "locationZh": {
+      "type": "string"
+    },
+    "eformName": {
+      "type": "string",
+      "required": true
+    },
+    "eformNameZh": {
+      "type": "string"
+    },
+    "eformDescription": {
+      "type": "text"
+    },
+    "eformDescriptionZh": {
+      "type": "text"
+    },
+    "eformNotes": {
+      "type": "text"
+    },
+    "eformNotesZh": {
+      "type": "text"
+    },
+    "eventStatus": {
+      "type": "enumeration",
+      "enum": [
+        "DRAFT",
+        "RELEASED",
+        "DISABLED",
+        "CLOSED"
+      ],
+      "default": "DRAFT"
+    },
+    "eventStartDate": {
+      "type": "date",
+      "required": true
+    },
+    "eventEndDate": {
+      "type": "date",
+      "required": true
+    },
+    "publicSlug": {
+      "type": "uid",
+      "targetField": "eformName"
+    },
+    "publicUuid": {
+      "type": "string",
+      "unique": true
+    },
+    "eventAccessType": {
+      "type": "enumeration",
+      "enum": [
+        "PUBLIC",
+        "PRIVATE"
+      ],
+      "default": "PUBLIC"
+    },
+    "publishedToPortals": {
+      "type": "boolean",
+      "default": false
+    },
+    "showInEventPeriod": {
+      "type": "boolean",
+      "default": true
+    },
+    "showInExpired": {
+      "type": "boolean",
+      "default": false
+    },
+    "releasedAt": {
+      "type": "datetime"
+    },
+    "publicBaseUrl": {
+      "type": "string"
+    },
+    "userPartition": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.user-partition",
+      "inversedBy": "eforms"
+    },
+    "template": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::event-portal.event-template",
+      "inversedBy": "eforms",
+      "required": true
+    },
+    "integrationSystem": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::eform.integration-system",
+      "inversedBy": "eforms"
+    },
+    "submissions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::eform.eform-submission",
+      "mappedBy": "eform"
+    }
+  }
+}

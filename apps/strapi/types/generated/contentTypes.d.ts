@@ -1078,10 +1078,6 @@ export interface PluginEventPortalEventTemplate
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    userPartitions: Schema.Attribute.Relation<
-      'oneToMany',
-      'plugin::event-portal.user-partition'
-    >;
   };
 }
 
@@ -1362,10 +1358,6 @@ export interface PluginEventPortalUserPartition
     publishedAt: Schema.Attribute.DateTime;
     remarks: Schema.Attribute.Text;
     slug: Schema.Attribute.UID<'code'> & Schema.Attribute.Required;
-    template: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::event-portal.event-template'
-    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
