@@ -1,0 +1,17 @@
+{
+  "name": "eform",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p ./server/tsconfig.build.json"
+  },
+  "exports": {
+    "./strapi-server": "./strapi-server.js",
+    "./package.json": "./package.json"
+  },
+  "strapi": {
+    "name": "eform",
+    "displayName": "Eform",
+    "description": "Eform content types, ERP routes, and integration dispatch.",
+    "kind": "plugin"
+  }
+}

@@ -3,6 +3,7 @@ import type {
   ContactInfoDTO,
   CreateEformSubmissionInput,
   CreateBookingInput,
+  EformSubmissionResultDTO,
   CreateHoldInput,
   EformDetailDTO,
   EnquiryInput,
@@ -80,7 +81,7 @@ export async function createErpBooking(input: CreateBookingInput): Promise<Appoi
   return (await response.json()) as AppointmentDTO;
 }
 
-export async function createErpEformSubmission(input: CreateEformSubmissionInput) {
+export async function createErpEformSubmission(input: CreateEformSubmissionInput): Promise<EformSubmissionResultDTO> {
   const response = await fetch(`${STRAPI_URL}/api/portal/erp/eforms/submissions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -91,7 +92,7 @@ export async function createErpEformSubmission(input: CreateEformSubmissionInput
     throw new Error('Failed to submit e-form');
   }
 
-  return response.json();
+  return (await response.json()) as EformSubmissionResultDTO;
 }
 
 export async function sendErpEnquiry(input: EnquiryInput): Promise<EnquiryResponseDTO> {

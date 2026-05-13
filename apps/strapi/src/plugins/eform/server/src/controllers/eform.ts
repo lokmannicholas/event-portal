@@ -1,7 +1,7 @@
 import { factories } from '@strapi/strapi';
 import { normalizeContentTypePayload } from '../utils/controller-payload';
 
-const uid = 'plugin::event-portal.eform';
+const uid = 'plugin::eform.eform' as any;
 
 export default factories.createCoreController(uid, ({ strapi }) => ({
   async create(ctx: any) {

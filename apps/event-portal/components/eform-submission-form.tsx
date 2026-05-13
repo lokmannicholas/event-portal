@@ -1,7 +1,8 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import type { FormFieldConfigDTO, EformDetailDTO } from '@event-portal/contracts';
+import type { EformDetailDTO, EformIntegrationResultDTO, FormFieldConfigDTO } from '@event-portal/contracts';
 import { createErpEformSubmission } from '../lib/erp-api';
 import {
   getLocalizedEformDescription,
@@ -57,7 +58,18 @@ function getThemeStyles(colors: {
   } as const;
 }
 
+const AUTO_SUBMIT_QUERY_KEYS = new Set(['autoSubmit', 'termsAccepted', 'acceptTerms']);
+
+function isTruthyQueryValue(value: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  return ['1', 'true', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
+}
+
 export function EformSubmissionForm(props: { detail: EformDetailDTO; language: ErpLanguage }) {
+  const searchParams = useSearchParams();
   const isZh = isTraditionalChinese(props.language);
   const eformName = getLocalizedEformName(props.detail.eform, props.language);
   const overviewText = getLocalizedEformNotes(props.detail.eform, props.language) || getLocalizedEformDescription(props.detail.eform, props.language);
@@ -78,6 +90,12 @@ export function EformSubmissionForm(props: { detail: EformDetailDTO; language: E
     acceptTerms: isZh ? '提交前請先確認條款。' : 'Please confirm the submission terms before continuing.',
     submitFailure: isZh ? '暫時未能提交表格，請稍後再試。' : 'Unable to submit the form right now. Please try again later.',
     submitSuccess: isZh ? '電子表格已成功提交。' : 'The e-form was submitted successfully.',
+    integrationSuccess: isZh ? '第三方系統整合已成功完成。' : 'Third-party integration completed successfully.',
+    integrationFailure: isZh ? '電子表格已提交，但第三方系統整合失敗。' : 'The e-form was submitted, but the third-party integration failed.',
+    integrationStatus: isZh ? '整合狀態' : 'Integration status',
+    integrationResponse: isZh ? '整合回應' : 'Integration response',
+    integrationError: isZh ? '整合錯誤' : 'Integration error',
+    autoSubmitFailure: isZh ? '系統已嘗試自動提交，但資料不完整或條款未確認。' : 'Auto-submit was attempted, but required values or terms acceptance were missing.',
   };
   const registerFields = useMemo(
     () =>
@@ -97,6 +115,9 @@ export function EformSubmissionForm(props: { detail: EformDetailDTO; language: E
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<{ tone: StatusTone; text: string } | null>(null);
   const [submittedReference, setSubmittedReference] = useState('');
+  const [integrationResult, setIntegrationResult] = useState<EformIntegrationResultDTO | null>(null);
+  const [autoSubmitAttempted, setAutoSubmitAttempted] = useState(false);
+  const [queryPrefillReady, setQueryPrefillReady] = useState(false);
   const fieldByKey = new Map(registerFields.map((field) => [field.fieldKey, field]));
   const leftColumnFields = resolvedLayout.fieldPositions
     .filter((position) => position.column === 'left')
@@ -114,7 +135,30 @@ export function EformSubmissionForm(props: { detail: EformDetailDTO; language: E
 
   useEffect(() => {
     setFieldValues(Object.fromEntries(registerFields.map((field) => [field.fieldKey, ''])));
+    setAutoSubmitAttempted(false);
+    setQueryPrefillReady(false);
   }, [registerFields]);
+
+  const queryParamValues = useMemo(() => {
+    const values = new Map<string, string>();
+
+    for (const [key, value] of searchParams.entries()) {
+      values.set(key, value);
+    }
+
+    return values;
+  }, [searchParams]);
+
+  const requestQueryParams = useMemo(
+    () =>
+      Object.fromEntries(
+        Array.from(queryParamValues.entries()).filter(([key]) => !AUTO_SUBMIT_QUERY_KEYS.has(key)),
+      ),
+    [queryParamValues],
+  );
+  const shouldAutoSubmit = isTruthyQueryValue(queryParamValues.get('autoSubmit') ?? null);
+  const termsAcceptedFromQuery =
+    isTruthyQueryValue(queryParamValues.get('termsAccepted') ?? null) || isTruthyQueryValue(queryParamValues.get('acceptTerms') ?? null);
 
   function getFieldValue(fieldKey: string) {
     return fieldValues[fieldKey] ?? '';
@@ -256,11 +300,41 @@ export function EformSubmissionForm(props: { detail: EformDetailDTO; language: E
     );
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  useEffect(() => {
+    if (Object.keys(fieldValues).length === 0) {
+      return;
+    }
 
+    const nextValues = { ...fieldValues };
+    let changed = false;
+
+    for (const field of registerFields) {
+      const queryValue = queryParamValues.get(field.fieldKey);
+
+      if (queryValue !== undefined && queryValue !== nextValues[field.fieldKey]) {
+        nextValues[field.fieldKey] = queryValue;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      setFieldValues(nextValues);
+      return;
+    }
+
+    if (termsAcceptedFromQuery && !termsAccepted) {
+      setTermsAccepted(true);
+      return;
+    }
+
+    if (!queryPrefillReady) {
+      setQueryPrefillReady(true);
+    }
+  }, [fieldValues, queryParamValues, queryPrefillReady, registerFields, termsAccepted, termsAcceptedFromQuery]);
+
+  async function submitForm(autoSubmit: boolean) {
     if (!termsAccepted) {
-      setStatus({ tone: 'danger', text: copy.acceptTerms });
+      setStatus({ tone: 'danger', text: autoSubmit ? copy.autoSubmitFailure : copy.acceptTerms });
       return;
     }
 
@@ -273,15 +347,51 @@ export function EformSubmissionForm(props: { detail: EformDetailDTO; language: E
         partitionCode: props.detail.eform.partitionCode,
         termsAccepted,
         formValues: fieldValues,
+        queryParams: requestQueryParams,
+        autoSubmit,
       });
 
       setSubmittedReference(String(response.submissionReference ?? ''));
-      setStatus({ tone: 'success', text: copy.submitSuccess });
+      setIntegrationResult(response.integration ?? null);
+      setStatus({
+        tone: response.integration && !response.integration.success ? 'danger' : 'success',
+        text: response.integration && !response.integration.success ? copy.integrationFailure : copy.submitSuccess,
+      });
     } catch {
+      setIntegrationResult(null);
       setStatus({ tone: 'danger', text: copy.submitFailure });
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  useEffect(() => {
+    if (!queryPrefillReady || !shouldAutoSubmit || submittedReference || isSubmitting || Object.keys(fieldValues).length === 0) {
+      return;
+    }
+
+    const hasAllRequiredValues = registerFields.every((field) => !field.required || Boolean((fieldValues[field.fieldKey] ?? '').trim()));
+
+    if (!hasAllRequiredValues || !termsAccepted) {
+      if (!autoSubmitAttempted) {
+        setStatus({ tone: 'danger', text: copy.autoSubmitFailure });
+        setAutoSubmitAttempted(true);
+      }
+      return;
+    }
+
+    if (autoSubmitAttempted) {
+      return;
+    }
+
+    setAutoSubmitAttempted(true);
+    void submitForm(true);
+  }, [autoSubmitAttempted, copy.autoSubmitFailure, fieldValues, isSubmitting, queryPrefillReady, registerFields, shouldAutoSubmit, submittedReference, termsAccepted]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAutoSubmitAttempted(true);
+    await submitForm(false);
   }
 
   if (submittedReference) {
@@ -301,6 +411,35 @@ export function EformSubmissionForm(props: { detail: EformDetailDTO; language: E
             </div>
           </div>
         </section>
+
+        {integrationResult ? (
+          <section className="erp-booking-shell" style={themeStyles.surface}>
+            <div className={`erp-booking-status is-${integrationResult.success ? 'success' : 'danger'}`}>
+              <span className="erp-booking-status-dot" aria-hidden="true" />
+              <span>{integrationResult.success ? copy.integrationSuccess : copy.integrationFailure}</span>
+            </div>
+            <div className="erp-booking-summary-grid">
+              <div className="erp-booking-summary-card" style={themeStyles.surface}>
+                <span>{copy.integrationStatus}</span>
+                <strong style={themeStyles.heading}>
+                  {integrationResult.requestMethod} {integrationResult.statusCode ?? ''}
+                </strong>
+              </div>
+              {integrationResult.responseBody ? (
+                <div className="erp-booking-summary-card" style={themeStyles.surface}>
+                  <span>{copy.integrationResponse}</span>
+                  <strong style={themeStyles.heading}>{JSON.stringify(integrationResult.responseBody)}</strong>
+                </div>
+              ) : null}
+              {integrationResult.errorMessage ? (
+                <div className="erp-booking-summary-card" style={themeStyles.surface}>
+                  <span>{copy.integrationError}</span>
+                  <strong style={themeStyles.heading}>{integrationResult.errorMessage}</strong>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
       </div>
     );
   }

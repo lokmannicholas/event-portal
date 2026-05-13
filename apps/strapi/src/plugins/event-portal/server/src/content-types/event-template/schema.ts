@@ -53,7 +53,7 @@ export default {
     "eforms": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "plugin::event-portal.eform",
+      "target": "plugin::eform.eform",
       "mappedBy": "template"
     }
   }

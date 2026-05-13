@@ -189,8 +189,6 @@ export async function bootstrap({ strapi }: { strapi: Core.Strapi }) {
   await seedDefaultMandatoryFields(strapi);
   await backfillPublicUuids(strapi, 'plugin::event-portal.event');
   await backfillAccessTypes(strapi, 'plugin::event-portal.event');
-  await backfillPublicUuids(strapi, 'plugin::event-portal.eform');
-  await backfillAccessTypes(strapi, 'plugin::event-portal.eform');
 
   strapi.db.lifecycles.subscribe({
     models: ['plugin::event-portal.event'],
@@ -205,20 +203,6 @@ export async function bootstrap({ strapi }: { strapi: Core.Strapi }) {
       await ensureExistingPublicUuid(strapi, 'plugin::event-portal.event', data, event.params.where as { documentId?: string } | undefined);
       await ensureExistingAccessType(strapi, 'plugin::event-portal.event', data, event.params.where as { documentId?: string } | undefined);
       await validateEventNoticeTemplateAssignments(strapi, data);
-    },
-  });
-
-  strapi.db.lifecycles.subscribe({
-    models: ['plugin::event-portal.eform'],
-    async beforeCreate(event) {
-      const data = event.params.data as Record<string, unknown> | undefined;
-      ensurePublicUuid(data);
-      ensureAccessType(data);
-    },
-    async beforeUpdate(event) {
-      const data = event.params.data as Record<string, unknown> | undefined;
-      await ensureExistingPublicUuid(strapi, 'plugin::event-portal.eform', data, event.params.where as { documentId?: string } | undefined);
-      await ensureExistingAccessType(strapi, 'plugin::event-portal.eform', data, event.params.where as { documentId?: string } | undefined);
     },
   });
 }

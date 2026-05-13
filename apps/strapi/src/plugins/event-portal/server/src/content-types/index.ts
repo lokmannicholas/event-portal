@@ -2,8 +2,6 @@ import appointment from './appointment';
 import appointmentHold from './appointment-hold';
 import auditLog from './audit-log';
 import contactInfo from './contact-info';
-import eform from './eform';
-import eformSubmission from './eform-submission';
 import event from './event';
 import eventSlot from './event-slot';
 import eventTemplate from './event-template';
@@ -19,8 +17,6 @@ export default {
   'appointment-hold': appointmentHold,
   'audit-log': auditLog,
   'contact-info': contactInfo,
-  'eform': eform,
-  'eform-submission': eformSubmission,
   'event': event,
   'event-slot': eventSlot,
   'event-template': eventTemplate,

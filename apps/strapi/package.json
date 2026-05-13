@@ -3,10 +3,11 @@
   "private": true,
   "packageManager": "yarn@1.22.22",
   "scripts": {
+    "build:plugin:eform": "tsc -p ./src/plugins/eform/server/tsconfig.build.json",
     "build:plugin:event-portal": "tsc -p ./src/plugins/event-portal/server/tsconfig.build.json",
     "build:plugin:sendgrid-email": "tsc -p ./src/plugins/sendgrid-email/server/tsconfig.build.json",
     "build:plugin:sms-sender": "tsc -p ./src/plugins/sms-sender/server/tsconfig.build.json",
-    "build:plugins": "yarn build:plugin:event-portal && yarn build:plugin:sendgrid-email && yarn build:plugin:sms-sender",
+    "build:plugins": "yarn build:plugin:eform && yarn build:plugin:event-portal && yarn build:plugin:sendgrid-email && yarn build:plugin:sms-sender",
     "build:scripts": "tsc -p ./tsconfig.scripts.json",
     "sync:schemas": "yarn build:scripts && node ./dist/scripts/sync-content-type-schemas.js",
     "predevelop": "yarn sync:schemas && yarn build:plugins",

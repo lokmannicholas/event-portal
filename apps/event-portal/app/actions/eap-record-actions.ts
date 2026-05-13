@@ -664,6 +664,29 @@ async function getTemplateRecord(documentId?: string) {
   }
 }
 
+async function getPartitionRecord(documentId?: string) {
+  if (!documentId) {
+    return undefined;
+  }
+
+  try {
+    const response = await eventPortalSdk.userPartitions.findOne(
+      documentId,
+      {
+        populate: ['template'],
+      },
+      {
+        cache: 'no-store',
+        revalidate: false,
+      },
+    );
+
+    return response.data;
+  } catch {
+    return undefined;
+  }
+}
+
 async function getCurrentTemplateFieldKeys(documentId: string) {
   const templateRecord = await getTemplateRecord(documentId);
   const formFields = Array.isArray(templateRecord?.formFields) ? templateRecord.formFields : [];
@@ -697,16 +720,24 @@ function getTemplatePartitionDocumentIds(templateRecord: Record<string, any> | u
     .filter(Boolean);
 }
 
-function validateTemplatePartitionAssignment(templateRecord: Record<string, any> | undefined, partitionDocumentId?: string) {
+async function validateTemplatePartitionAssignment(templateRecord: Record<string, any> | undefined, partitionDocumentId?: string) {
   if (!templateRecord || !partitionDocumentId) {
     return;
   }
 
   const assignedPartitionDocumentIds = getTemplatePartitionDocumentIds(templateRecord);
 
-  if (!assignedPartitionDocumentIds.includes(partitionDocumentId)) {
-    throw new Error('Selected partition is not assigned to the chosen template.');
+  if (assignedPartitionDocumentIds.includes(partitionDocumentId)) {
+    return;
   }
+
+  const partitionRecord = await getPartitionRecord(partitionDocumentId);
+
+  if (partitionRecord?.template?.documentId === templateRecord.documentId) {
+    return;
+  }
+
+  throw new Error('Selected partition is not assigned to the chosen template.');
 }
 
 function getListPath(kind: EapRecordKind) {
@@ -840,7 +871,7 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
       const eventSlots = buildEventSlotPayloads(formData);
       const noticeTemplates = buildEventNoticeTemplateRelations(formData);
-      validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
+      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -880,7 +911,7 @@ async function tryCreateRecord(kind: EapRecordKind, formData: FormData) {
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
       const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
-      validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
+      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -1035,7 +1066,7 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
       const noticeTemplates = buildEventNoticeTemplateRelations(formData);
       const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
-      validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
+      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),
@@ -1075,7 +1106,7 @@ async function tryUpdateRecord(kind: EapRecordKind, documentId: string, formData
       const showInExpired = getOptionalBooleanValue(formData, 'showInExpired');
       const templateRecord = await getTemplateRecord(getOptionalValue(formData, 'templateDocumentId'));
       const partitionDocumentId = getOptionalValue(formData, 'partitionDocumentId');
-      validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
+      await validateTemplatePartitionAssignment(templateRecord, partitionDocumentId);
       const payload = {
         companyName: getValue(formData, 'companyName'),
         location: getValue(formData, 'location'),

@@ -22,6 +22,7 @@ export type LanguageCode = 'EN' | 'ZH';
 export type FormLayoutMode = 'SINGLE_COLUMN' | 'TWO_COLUMN' | 'SPLIT';
 export type TemplateLayoutFieldColumn = 'left' | 'right' | 'full';
 export type TemplateTitlePosition = 'left' | 'center' | 'right';
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export interface MediaAssetDTO {
   documentId?: string;
@@ -393,11 +394,28 @@ export interface EformSubmissionDTO {
   portalSource: PortalKind;
 }
 
+export interface EformIntegrationResultDTO {
+  success: boolean;
+  requestMethod: string;
+  requestPath: string;
+  requestBodyType: 'JSON' | 'FORM_DATA';
+  statusCode?: number;
+  matchedOutcome?: 'SUCCESS' | 'FAILED' | 'UNKNOWN';
+  responseBody?: JsonValue;
+  errorMessage?: string;
+}
+
+export interface EformSubmissionResultDTO extends EformSubmissionDTO {
+  integration?: EformIntegrationResultDTO;
+}
+
 export interface CreateEformSubmissionInput {
   eformDocumentId: string;
   partitionCode: string;
   termsAccepted: boolean;
   formValues?: Record<string, string>;
+  queryParams?: Record<string, string>;
+  autoSubmit?: boolean;
 }
 
 export interface EnquiryInput {

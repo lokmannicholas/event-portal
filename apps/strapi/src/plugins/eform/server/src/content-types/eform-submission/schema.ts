@@ -1,4 +1,4 @@
-{
+export default {
   "kind": "collectionType",
   "collectionName": "eform_submissions",
   "info": {
@@ -60,8 +60,8 @@
     "eform": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::event-portal.eform",
+      "target": "plugin::eform.eform",
       "inversedBy": "submissions"
     }
   }
-}
+};

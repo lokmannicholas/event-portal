@@ -1,4 +1,8 @@
 export default ({ env }: { env: any }) => ({
+  eform: {
+    enabled: true,
+    resolve: './src/plugins/eform',
+  },
   'event-portal': {
     enabled: true,
     resolve: './src/plugins/event-portal',
